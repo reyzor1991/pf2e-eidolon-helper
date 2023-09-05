@@ -1,0 +1,88 @@
+{
+  "id": "pf2e-eidolon-helper",
+  "title": "PF2e Eidolon Helper",
+  "description": "PF2e Eidolon Helper",
+  "version": "0.0.1",
+  "authors": [
+    {
+      "name": "Reyzor",
+      "url": "https://github.com/reyzor1991",
+      "discord": "reyzor1991"
+    }
+  ],
+  "languages": [],
+  "esmodules": [
+    "pf2e-eidolon-helper.js"
+  ],
+  "styles": [
+  ],
+  "packFolders": [
+    {
+      "name": "PF2e Eidolon Helper",
+      "sorting": "m",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "packs": [
+        "pf2e-eidolon-helper",
+        "pf2e-eidolon-helper-macros"
+      ]
+    }
+  ],
+  "packs": [
+    {
+      "label": "PF2e Eidolon Helper",
+      "name": "pf2e-eidolon-helper",
+      "path": "packs/pf2e-eidolon-helper.db",
+      "system": "pf2e",
+      "private": false,
+      "type": "Item",
+      "flags": {}
+    },
+    {
+      "label": "PF2e Eidolon Helper Macros",
+      "name": "pf2e-eidolon-helper-macros",
+      "path": "packs/pf2e-eidolon-helper-macros.db",
+      "system": "pf2e",
+      "private": false,
+      "type": "Macro",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    }
+  ],
+  "socket": true,
+  "manifest": "https://github.com/reyzor1991/pf2e-eidolon-helper/releases/latest/download/module.json",
+  "download": "https://github.com/reyzor1991/pf2e-eidolon-helper/releases/latest/download/pf2e-eidolon-helper.zip",
+  "url": "https://github.com/reyzor1991/pf2e-eidolon-helper",
+  "readme": "https://github.com/reyzor1991/pf2e-eidolon-helper/blob/master/README.md",
+  "bugs": "https://github.com/reyzor1991/pf2e-eidolon-helper/issues",
+  "changelog": "https://github.com/reyzor1991/pf2e-eidolon-helper/blob/master/CHANGELOG.md",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "11.308"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "pf2e",
+        "type": "system",
+        "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/system.json",
+        "compatibility": {
+          "minimum": "5.0.2",
+          "verified": "5.4.3"
+        }
+      }
+    ],
+    "requires": [
+      {
+        "id": "socketlib",
+        "type": "module",
+        "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/master/module.json"
+      }
+    ]
+  }
+}
