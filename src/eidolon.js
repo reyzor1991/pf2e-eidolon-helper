@@ -1,3 +1,47 @@
+const moduleName = "pf2e-eidolon-helper";
+
+const dcByLevel = new Map([
+    [-1, 13],
+    [0, 14],
+    [1, 15],
+    [2, 16],
+    [3, 18],
+    [4, 19],
+    [5, 20],
+    [6, 22],
+    [7, 23],
+    [8, 24],
+    [9, 26],
+    [10, 27],
+    [11, 28],
+    [12, 30],
+    [13, 31],
+    [14, 32],
+    [15, 34],
+    [16, 35],
+    [17, 36],
+    [18, 38],
+    [19, 39],
+    [20, 40],
+    [21, 42],
+    [22, 44],
+    [23, 46],
+    [24, 48],
+    [25, 50],
+]);
+
+function messageType(message, type) {
+    return type === message?.flags?.pf2e?.context?.type;
+}
+
+function actorFeat(actor, feat) {
+    return actor?.itemTypes?.feat?.find((c => feat === c.slug))
+}
+
+function hasEffect(actor, eff) {
+    return actor?.itemTypes?.effect?.find((c => eff === c.slug))
+}
+
 async function setSummonerHP(actor) {
     if (!game.user.isGM) {
         ui.notifications.info(`Only GM can run script`);
@@ -139,6 +183,70 @@ Hooks.on("deleteItem", async (item) => {
         }
     }
 });
+
+async function extendBoost(actor) {
+    if (!actor) {
+        ui.notifications.info(`Need to select Actor`);
+        return
+    }
+    if ("summoner" != actor?.class?.slug) {
+        ui.notifications.info(`Actor should be Summoner`);
+        return
+    }
+    if (game.user.targets.size != 1) {
+        ui.notifications.info(`Need to select 1 token of eidolon as target`);
+        return
+    }
+    const target = game.user.targets.first().actor;
+    if ("eidolon" != target?.class?.slug && "Eidolon" != target?.class?.name) {
+        ui.notifications.info(`Need to select 1 token of eidolon as target`);
+        return
+    }
+
+    const defDC = (dcByLevel.get(actor.level) ?? 50) + 5;
+
+    const { dc, spell } = await Dialog.wait({
+        title:"Use spell",
+        content: `
+            <h3>DC of check</h3>
+            <input id="spell-dc" type="number" min="0" value=${defDC} />
+            <hr><h3>Spell</h3><select id="spells">
+                <option value=0>Boost Eidolon</option>
+                <option value=1>Reinforce Eidolon</option>
+            </select><hr>
+        `,
+        buttons: {
+                ok: {
+                    label: "Cast",
+                    icon: "<i class='fa-solid fa-magic'></i>",
+                    callback: (html) => { return { dc: parseInt(html[0].querySelector("#spell-dc").value), spell: parseInt(html[0].querySelector("#spells").value)} }
+                },
+                cancel: {
+                    label: "Cancel",
+                    icon: "<i class='fa-solid fa-ban'></i>",
+                }
+        },
+        render: (html) => {
+            html.parent().parent()[0].style.cssText += 'box-shadow: 0 0 10px purple;';
+        },
+        default: "ok"
+    });
+
+    const degreeOfSuccess = (await actor.skills[eidolonTraditionSkill[target.ancestry.slug]??'arcana'].roll({dc:{value: dc}, skipDialog: true})).degreeOfSuccess;
+
+    const spellUuid = spell === 0 ? 'Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW' : 'Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF';
+
+    let spellObj = (await fromUuid(spellUuid)).toObject();
+    spellObj.system.duration.unit = "rounds";
+
+    if (degreeOfSuccess === 3) {
+        spellObj.system.duration.value = 4;
+    } else if (degreeOfSuccess === 2) {
+        spellObj.system.duration.value = 3;
+    }
+
+    await target.createEmbeddedDocuments("Item", [spellObj]);
+}
 
 Hooks.once("init", () => {
 
@@ -331,74 +439,6 @@ const eidolonTraditionSkill = {
     'plant-eidolon': 'nature',
     'psychopomp-eidolon': 'religion',
     'undead-eidolon': 'religion',
-}
-
-async function extendBoost(actor) {
-    if (!actor) {
-        ui.notifications.info(`Need to select Actor`);
-        return
-    }
-    if ("summoner" != actor?.class?.slug) {
-        ui.notifications.info(`Actor should be Summoner`);
-        return
-    }
-    if (game.user.targets.size != 1) {
-        ui.notifications.info(`Need to select 1 token of eidolon as target`);
-        return
-    }
-    const target = game.user.targets.first().actor;
-    if ("eidolon" != target?.class?.slug && "Eidolon" != target?.class?.name) {
-        ui.notifications.info(`Need to select 1 token of eidolon as target`);
-        return
-    }
-
-    const defDC = (dcByLevel.get(actor.level) ?? 50) + 5;
-
-    const { dc, spell } = await Dialog.wait({
-        title:"Use spell",
-        content: `
-            <h3>DC of check</h3>
-            <input id="spell-dc" type="number" min="0" value=${defDC} />
-            <hr><h3>Spell</h3><select id="spells">
-                <option value=0>Boost Eidolon</option>
-                <option value=1>Reinforce Eidolon</option>
-            </select><hr>
-        `,
-        buttons: {
-                ok: {
-                    label: "Cast",
-                    icon: "<i class='fa-solid fa-magic'></i>",
-                    callback: (html) => { return { dc: parseInt(html[0].querySelector("#spell-dc").value), spell: parseInt(html[0].querySelector("#spells").value)} }
-                },
-                cancel: {
-                    label: "Cancel",
-                    icon: "<i class='fa-solid fa-ban'></i>",
-                }
-        },
-        render: (html) => {
-            html.parent().parent()[0].style.cssText += 'box-shadow: 0 0 10px purple;';
-        },
-        default: "ok"
-    });
-
-    const degreeOfSuccess = (await actor.skills[eidolonTraditionSkill[target.ancestry.slug]??'arcana'].roll({dc:{value: dc}, skipDialog: true})).degreeOfSuccess;
-
-    const spellUuid = spell === 0 ? 'Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW' : 'Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF';
-
-    let spellObj = (await fromUuid(spellUuid)).toObject();
-    spellObj.system.duration.unit = "rounds";
-
-    if (degreeOfSuccess === 3) {
-        spellObj.system.duration.value = 4;
-    } else if (degreeOfSuccess === 2) {
-        spellObj.system.duration.value = 3;
-    }
-
-    if (hasPermissions(spellObj)) {
-        await target.createEmbeddedDocuments("Item", [spellObj]);
-    } else {
-        socketlibSocket._sendRequest("createFeintEffectOnTarget", [spellObj, target.uuid], 0)
-    }
 }
 
 Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
