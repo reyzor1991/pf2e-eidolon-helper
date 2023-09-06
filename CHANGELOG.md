@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.0.2
+
+### Bug fixes
+- Fix issue when dismiss eidolon
+
 ## Version 0.0.1
 
 ### New feature

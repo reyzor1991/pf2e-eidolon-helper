@@ -2,7 +2,7 @@
   "id": "pf2e-eidolon-helper",
   "title": "PF2e Eidolon Helper",
   "description": "PF2e Eidolon Helper",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "authors": [
     {
       "name": "Reyzor",
@@ -77,11 +77,6 @@
       }
     ],
     "requires": [
-      {
-        "id": "socketlib",
-        "type": "module",
-        "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/master/module.json"
-      },
       {
         "id": "pf2e-animal-companions",
         "type": "module",

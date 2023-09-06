@@ -419,7 +419,7 @@ Hooks.on('preUpdateActor', async (actor, data, diff, id) => {
 });
 
 async function dismissEidolon(actorId) {
-    game.scenes.current.tokens.filter(a=>a?.actor.id === actorId)
+    game.scenes.current.tokens.filter(a=>a?.actor?.id === actorId)
         .forEach(t=>{
             t.actor.itemTypes.effect.forEach(e=>e.delete());
             window?.warpgate?.dismiss(t.id)
