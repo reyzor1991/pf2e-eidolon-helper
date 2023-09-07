@@ -76,7 +76,7 @@
         }
       }
     ],
-    "requires": [
+    "recommended": [
       {
         "id": "pf2e-animal-companions",
         "type": "module",
