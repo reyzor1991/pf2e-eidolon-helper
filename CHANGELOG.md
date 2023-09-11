@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.0.4
+
+### Bug fixes
+- Avoid errors when parse message
+
 ## Version 0.0.3
 
 ### Bug fixes

@@ -446,12 +446,12 @@ Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
     if (!messageType(message, undefined) && !messageType(message, "spell-cast")){return}
     const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid));
 
-    if (_obj.slug === "boost-eidolon") {
+    if (_obj?.slug === "boost-eidolon") {
         const ei = await fromUuid(message.actor.getFlag(moduleName, "eidolon"));
         if (ei) {
             setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
         }
-    } else if (_obj.slug === "reinforce-eidolon") {
+    } else if (_obj?.slug === "reinforce-eidolon") {
         const ei = await fromUuid(message.actor.getFlag(moduleName, "eidolon"));
         if (ei) {
             setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
