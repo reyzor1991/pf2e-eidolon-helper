@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.0.5
+
+### Bug fixes
+- Fix description of setting hint
+
 ## Version 0.0.4
 
 ### Bug fixes

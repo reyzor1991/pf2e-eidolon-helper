@@ -252,7 +252,7 @@ Hooks.once("init", () => {
 
     game.settings.register(moduleName, "sharedHP", {
         name: "Summoner-Eidolon shared HP",
-        hint: "Make the hp on your summoner go down when you damage their Eidolon. Need to run marco to link summoner and eidolon",
+        hint: "Make the hp on your summoner go down when you damage their Eidolon. Need to run macro to link summoner and eidolon",
         scope: "world",
         config: true,
         default: false,
