@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.0.6
+
+### Bug fixes
+- Fix issue with decreasing Frightened
+
 ## Version 0.0.5
 
 ### Bug fixes

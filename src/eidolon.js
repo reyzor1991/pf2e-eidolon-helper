@@ -336,7 +336,7 @@ Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
 
             for (const effect of ei.itemTypes.effect) {
                 effect.prepareBaseData();
-                await effect.onTurnStart();
+                await effect.onTurnStartEnd('start');
             }
         }
     }
@@ -359,7 +359,7 @@ Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
             }
             for (const effect of ei.itemTypes.effect) {
                 effect.prepareBaseData();
-                await effect.onTurnStart();
+                await effect.onTurnStartEnd('end');
             }
         }
     }
