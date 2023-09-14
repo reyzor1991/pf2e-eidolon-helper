@@ -203,7 +203,7 @@ async function extendBoost(actor) {
         return
     }
 
-    const defDC = (dcByLevel.get(actor.level) ?? 50) + 5;
+    const defDC = (dcByLevel.get(actor.level) ?? 50);
 
     const { dc, spell } = await Dialog.wait({
         title:"Use spell",

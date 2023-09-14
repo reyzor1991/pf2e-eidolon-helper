@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.0.7
+
+### Bug fixes
+- Extend Boost standard DC
+
 ## Version 0.0.6
 
 ### Bug fixes
