@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.0.8
+
+### Bug fixes
+- Not roll when cancel
+
 ## Version 0.0.7
 
 ### Bug fixes
