@@ -193,6 +193,10 @@ async function extendBoost(actor) {
         ui.notifications.info(`Actor should be Summoner`);
         return
     }
+    if (!actor.system.resources.focus.value) {
+        ui.notifications.info(`Actor don't have focus points`);
+        return
+    }
     if (game.user.targets.size != 1) {
         ui.notifications.info(`Need to select 1 token of eidolon as target`);
         return
@@ -245,6 +249,10 @@ async function extendBoost(actor) {
         spellObj.system.duration.value = 4;
     } else if (degreeOfSuccess === 2) {
         spellObj.system.duration.value = 3;
+    }
+
+    if (degreeOfSuccess != 1) {
+        await actor.update({ "system.resources.focus.value": actor.system.resources.focus.value - 1})
     }
 
     await target.createEmbeddedDocuments("Item", [spellObj]);
@@ -423,7 +431,6 @@ Hooks.on('preUpdateActor', async (actor, data, diff, id) => {
 async function dismissEidolon(actorId) {
     game.scenes.current.tokens.filter(a=>a?.actor?.id === actorId)
         .forEach(t=>{
-            t.actor.itemTypes.effect.forEach(e=>e.delete());
             window?.warpgate?.dismiss(t.id)
         });
 }
@@ -448,15 +455,11 @@ Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
     if (!messageType(message, undefined) && !messageType(message, "spell-cast")){return}
     const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid));
 
+    const ei = await fromUuid(message.actor.getFlag(moduleName, "eidolon"));
+    if (!ei) {return}
     if (_obj?.slug === "boost-eidolon") {
-        const ei = await fromUuid(message.actor.getFlag(moduleName, "eidolon"));
-        if (ei) {
-            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
-        }
+        setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
     } else if (_obj?.slug === "reinforce-eidolon") {
-        const ei = await fromUuid(message.actor.getFlag(moduleName, "eidolon"));
-        if (ei) {
-            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
-        }
+        setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
     }
 });
