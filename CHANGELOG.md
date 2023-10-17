@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.0.9
+
+- Extend boost - check focus points
+
 ## Version 0.0.8
 
 ### Bug fixes
