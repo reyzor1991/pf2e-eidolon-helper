@@ -457,9 +457,18 @@ Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
 
     const ei = await fromUuid(message.actor.getFlag(moduleName, "eidolon"));
     if (!ei) {return}
-    if (_obj?.slug === "boost-eidolon") {
-        setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
-    } else if (_obj?.slug === "reinforce-eidolon") {
-        setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
+    if (!game.modules.get("pf2e-action-support-engine")?.active) {
+        if (_obj?.slug === "boost-eidolon") {
+            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
+        } else if (_obj?.slug === "reinforce-eidolon") {
+            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
+        }
     }
 });
+
+async function setEffectToActor(actor, effUuid) {
+    let source = await fromUuid(effUuid)
+    source = source.toObject();
+    source.flags = mergeObject(source.flags ?? {}, { core: { sourceId: effUuid } });
+    await actor.createEmbeddedDocuments("Item", [source]);
+}

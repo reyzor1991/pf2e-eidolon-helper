@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.0.10
+
+- Fix apply spell effect
+
 ## Version 0.0.9
 
 - Extend boost - check focus points
