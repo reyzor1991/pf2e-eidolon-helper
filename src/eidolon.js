@@ -51,7 +51,7 @@ async function setSummonerHP(actor) {
         ui.notifications.info(`Need to select Actor`);
         return
     }
-    if (isSummoner(actor)) {
+    if (!isSummoner(actor)) {
         ui.notifications.info(`Actor should be Summoner`);
         return
     }

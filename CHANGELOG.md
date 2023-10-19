@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.0.12
+
+- Fix summoner of dedication
+
 ## Version 0.0.11
 
 - Support of dedication
