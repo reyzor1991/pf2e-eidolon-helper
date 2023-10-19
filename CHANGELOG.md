@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.0.13
+
+- Fix Extend boost
+
 ## Version 0.0.12
 
 - Fix summoner of dedication

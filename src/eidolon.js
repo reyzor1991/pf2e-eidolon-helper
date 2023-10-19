@@ -251,7 +251,7 @@ async function extendBoost(actor) {
         spellObj.system.duration.value = 3;
     }
 
-    if (degreeOfSuccess != 1) {
+    if (degreeOfSuccess === 3 || degreeOfSuccess === 2) {
         await actor.update({ "system.resources.focus.value": actor.system.resources.focus.value - 1})
     }
 
