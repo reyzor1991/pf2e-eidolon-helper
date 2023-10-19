@@ -51,7 +51,7 @@ async function setSummonerHP(actor) {
         ui.notifications.info(`Need to select Actor`);
         return
     }
-    if ("summoner" != actor?.class?.slug) {
+    if (isSummoner(actor)) {
         ui.notifications.info(`Actor should be Summoner`);
         return
     }
@@ -127,7 +127,7 @@ async function addDrainedToSummoner(eidolon, feat, data) {
 
 Hooks.on("updateItem", async (item) => {
     if ("condition" === item.type && item.system.slug === "drained") {
-        if ("character" === item.actor?.type && "summoner" === item.actor?.class?.slug) {
+        if (isSummoner(item.actor)) {
 
             let ei = item.actor.getFlag(moduleName, "eidolon");
             if (ei) {
@@ -147,7 +147,7 @@ Hooks.on("updateItem", async (item) => {
 
 Hooks.on("createItem", async (item) => {
     if ("condition" === item.type && item.slug === "drained") {
-        if ("character" === item.actor?.type && "summoner" === item.actor?.class?.slug) {
+        if (isSummoner(item?.actor)) {
             let ei = item.actor.getFlag(moduleName, "eidolon");
             if (ei) {
                 const eidolon = await fromUuid(ei);
@@ -165,7 +165,7 @@ Hooks.on("createItem", async (item) => {
 
 Hooks.on("deleteItem", async (item) => {
     if ("condition" === item.type && item.slug === "drained") {
-        if ("character" === item.actor?.type && "summoner" === item.actor?.class?.slug) {
+        if (isSummoner(item?.actor)) {
             let ei = item.actor.getFlag(moduleName, "eidolon");
             if (ei) {
                 const eidolon = await fromUuid(ei);
@@ -189,7 +189,7 @@ async function extendBoost(actor) {
         ui.notifications.info(`Need to select Actor`);
         return
     }
-    if ("summoner" != actor?.class?.slug) {
+    if (!isSummoner(actor)) {
         ui.notifications.info(`Actor should be Summoner`);
         return
     }
@@ -326,7 +326,7 @@ Hooks.once("init", () => {
 Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
     if (!game.settings.get(moduleName, "eidolonCondition")) {return}
     const actor = combatant.actor;
-    if ("character" === actor?.type && "summoner" === actor?.class?.slug) {
+    if (isSummoner(actor)) {
         let ei = actor.getFlag(moduleName, "eidolon");
         if (ei) {
             ei = await fromUuid(ei);
@@ -355,7 +355,7 @@ Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
 Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
     if (!game.settings.get(moduleName, "eidolonCondition")) {return}
     const actor = combatant.actor;
-    if ("character" === actor?.type && "summoner" === actor?.class?.slug) {
+    if (isSummoner(actor)) {
         let ei = actor.getFlag(moduleName, "eidolon");
         if (ei) {
             ei = await fromUuid(ei);
@@ -377,7 +377,7 @@ Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
 
 
 Hooks.on('pf2e.restForTheNight', async (actor) => {
-    if ("character" === actor?.type && "summoner" === actor?.class?.slug) {
+    if (isSummoner(actor)) {
         const ei = actor.getFlag(moduleName, "eidolon");
         if (ei) {
             (await fromUuid(ei)).update({
@@ -386,6 +386,10 @@ Hooks.on('pf2e.restForTheNight', async (actor) => {
         }
     }
 });
+
+function isSummoner(actor) {
+    return "character" === actor?.type && ("summoner" === actor?.class?.slug || actor.itemTypes.feat.find(a=>a.slug==='summoner-dedication'))
+}
 
 Hooks.on('preUpdateActor', async (actor, data, diff, id) => {
     if (!game.settings.get(moduleName, "sharedHP")) {
@@ -408,7 +412,7 @@ Hooks.on('preUpdateActor', async (actor, data, diff, id) => {
                     "system.attributes.hp": hp
                 }, { "noHook": true })
             }
-        } else if ("character" === actor?.type && "summoner" === actor?.class?.slug) {
+        } else if (isSummoner(actor)) {
             const ei = actor.getFlag(moduleName, "eidolon");
             if (ei) {
                 const as = await fromUuid(ei);
