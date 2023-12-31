@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.0.14
+
+- Fix issue with drained condition
+- Add sp handling
+- ***Need to delete feat from eidolon and relink actors*** 
+
 ## Version 0.0.13
 
 - Fix Extend boost
