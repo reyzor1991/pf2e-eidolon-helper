@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.15
+- Fix issue with effects
+
 ## Version 0.0.14
 
 - Fix issue with drained condition

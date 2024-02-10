@@ -268,7 +268,7 @@ Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
     if (isSummoner(actor)) {
         let ei = actor.getFlag(moduleName, "eidolon");
         if (ei) {
-            ei = await fromUuid(ei);
+            ei = game.actors.get(ei);
 
             const stunned = ei.getCondition("stunned") ?? ei.getCondition("slowed");
             if (stunned && !stunned.isLocked) {
@@ -284,8 +284,8 @@ Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
             }
 
             for (const effect of ei.itemTypes.effect) {
-                effect.prepareBaseData();
                 await effect.onTurnStartEnd('start');
+                effect.prepareBaseData();
             }
         }
     }
@@ -297,7 +297,7 @@ Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
     if (isSummoner(actor)) {
         let ei = actor.getFlag(moduleName, "eidolon");
         if (ei) {
-            ei = await fromUuid(ei);
+            ei = game.actors.get(ei);
             const frightened = ei.getCondition("frightened")
             if (frightened && !frightened.isLocked) {
                 await ei.decreaseCondition("frightened");
@@ -307,8 +307,8 @@ Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
                 await condition.onEndTurn({ token });
             }
             for (const effect of ei.itemTypes.effect) {
-                effect.prepareBaseData();
                 await effect.onTurnStartEnd('end');
+                effect.prepareBaseData();
             }
         }
     }
@@ -345,7 +345,7 @@ Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
     if (!messageType(message, undefined) && !messageType(message, "spell-cast")){return}
     const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid));
 
-    const ei = await fromUuid(message.actor.getFlag(moduleName, "eidolon"));
+    const ei = game.actors.get(message.actor.getFlag(moduleName, "eidolon"));
     if (!ei) {return}
     if (!game.modules.get("pf2e-action-support-engine")?.active) {
         if (_obj?.slug === "boost-eidolon") {
