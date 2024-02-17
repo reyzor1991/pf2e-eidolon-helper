@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.16
+- Fix Using summoner save dc
+
 ## Version 0.0.15
 - Fix issue with effects
 

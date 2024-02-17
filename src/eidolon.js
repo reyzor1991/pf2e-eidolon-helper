@@ -92,8 +92,10 @@ Hooks.on("preCreateItem", async (item, data) => {
     if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
         if ("condition" === data.type && item.actor?.system?.attributes?.hp?.value === 0) {
             if ("dying" === item.slug) {
-                const f = actorFeat(item.actor, "summoner-hp")
-                if (f && f?.flags?.summoner) {
+                const summonerId = item.actor.getFlag(moduleName, 'summoner')
+                if (summonerId) {
+                    const summoner = game.actors.get(summonerId);
+
                     const as = await fromUuid(f.flags.summoner);
                     as.increaseCondition('dying')
                 }
@@ -226,15 +228,15 @@ Hooks.once("init", () => {
         CONFIG.PF2E.Item.documentClasses.spell.prototype.getChatData = async function(htmlOptions={}, _rollOptions2={}) {
             const r = await originGetChatData.call(this, htmlOptions, _rollOptions2);
             if ("character" === this.actor?.type && "eidolon" === this.actor?.class?.slug) {
-                const f = actorFeat(this.actor, "summoner-hp")
-                if (f && f?.flags?.summoner) {
-                    const summoner = await fromUuid(f.flags.summoner);
+                const summonerId = this.actor.getFlag(moduleName, 'summoner')
+                if (summonerId) {
+                    const summoner = game.actors.get(summonerId);
 
                     const originStatistic = this.trickData?.statistic ?? this.spellcasting?.statistic;
-                    const summonerStatistic = summoner?.spellcasting?.find(a=>a.attribute === originStatistic.ability)
+                    const summonerStatistic = summoner?.spellcasting?.find(a=>a.attribute === originStatistic.attribute)
 
                     if (summonerStatistic && r?.isSave) {
-                        const saveKey = this.system.save.basic ? "PF2E.SaveDCLabelBasic" : "PF2E.SaveDCLabel";
+                        const saveKey = this.system.defense.save.basic ? "PF2E.SaveDCLabelBasic" : "PF2E.SaveDCLabel";
 
                         r['save']['label'] = game.i18n.format(saveKey, { dc: summonerStatistic.statistic.dc.value, type: r.save.type });
                         r['save']['breakdown'] = summonerStatistic.statistic.dc.breakdown;
@@ -244,6 +246,8 @@ Hooks.once("init", () => {
                     if (summonerStatistic && r?.isAttack) {
                         r['check']['mod'] = summonerStatistic.statistic.check.mod
                         r['check']['breakdown'] = summonerStatistic.statistic.check.breakdown
+                        originStatistic.modifiers = summonerStatistic.statistic.modifiers;
+                        originStatistic.check.modifiers = summonerStatistic.statistic.modifiers;
                     }
                 }
             }
