@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.17
+- Add support of resilient rune (setting option)
+
 ## Version 0.0.16
 - Fix Using summoner save dc
 

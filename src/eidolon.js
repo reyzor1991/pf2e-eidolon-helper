@@ -221,6 +221,15 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
+    game.settings.register(moduleName, "eidolonRunes", {
+        name: "Apply summoner runes bonuses to eidolon",
+        hint: "",
+        scope: "world",
+        config: true,
+        requiresReload: true,
+        default: false,
+        type: Boolean,
+    });
 
     if (game.settings.get(moduleName, "eidolonSpell")) {
 
@@ -254,6 +263,95 @@ Hooks.once("init", () => {
             return r;
         }
 
+    }
+
+
+    if (game.settings.get(moduleName, "eidolonRunes")) {
+        const originPrepareSaves = CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareSaves;
+        CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareSaves = function() {
+            originPrepareSaves.call(this);
+            let summonerId = this.getFlag(moduleName, 'summoner')
+            let eidolonId = this.getFlag(moduleName, 'eidolon')
+            if (summonerId) {
+                const summoner = game.actors.get(summonerId);
+                const summonerStatistic = summoner.saves
+                const eidolonStatistic = this.saves
+                if (summonerStatistic) {
+                    let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === "resilient");
+                    let eidolonResilient = eidolonStatistic.will.modifiers.find(m=>m.slug === "resilient");
+                    if (resilient && !eidolonResilient) {
+                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                            eidolonStatistic[save].modifiers.push(resilient)
+                            eidolonStatistic[save].dc.modifiers.push(resilient)
+                            eidolonStatistic[save].check.modifiers.push(resilient)
+                        }
+                    } else if (!resilient && eidolonResilient) {
+                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
+                        if (idx != -1) {
+                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                                eidolonStatistic[save].modifiers.splice(idx, 1)
+                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
+                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
+                            }
+                        }
+                    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
+                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
+                        if (idx != -1) {
+                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                                eidolonStatistic[save].modifiers.splice(idx, 1)
+                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
+                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
+                            }
+                        }
+                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                            eidolonStatistic[save].modifiers.push(resilient)
+                            eidolonStatistic[save].dc.modifiers.push(resilient)
+                            eidolonStatistic[save].check.modifiers.push(resilient)
+                        }
+                    }
+                }
+            } else if (eidolonId) {
+                const eidolon = game.actors.get(eidolonId);
+
+                const summonerStatistic = this.saves
+                const eidolonStatistic = eidolon.saves
+
+                if (eidolonStatistic) {
+                    let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === "resilient");
+                    let eidolonResilient = eidolonStatistic.will.modifiers.find(m=>m.slug === "resilient");
+                    if (resilient && !eidolonResilient) {
+                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                            eidolonStatistic[save].modifiers.push(resilient)
+                            eidolonStatistic[save].dc.modifiers.push(resilient)
+                            eidolonStatistic[save].check.modifiers.push(resilient)
+                        }
+                    } else if (!resilient && eidolonResilient) {
+                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
+                        if (idx != -1) {
+                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                                eidolonStatistic[save].modifiers.splice(idx, 1)
+                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
+                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
+                            }
+                        }
+                    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
+                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
+                        if (idx != -1) {
+                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                                eidolonStatistic[save].modifiers.splice(idx, 1)
+                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
+                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
+                            }
+                        }
+                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                            eidolonStatistic[save].modifiers.push(resilient)
+                            eidolonStatistic[save].dc.modifiers.push(resilient)
+                            eidolonStatistic[save].check.modifiers.push(resilient)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (game.settings.get(moduleName, "sharedHP")) {
