@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.18
+- Fix check save dc
+
 ## Version 0.0.17
 - Add support of resilient rune (setting option)
 

@@ -274,8 +274,8 @@ Hooks.once("init", () => {
             let eidolonId = this.getFlag(moduleName, 'eidolon')
             if (summonerId) {
                 const summoner = game.actors.get(summonerId);
-                const summonerStatistic = summoner.saves
-                const eidolonStatistic = this.saves
+                const summonerStatistic = summoner?.saves
+                const eidolonStatistic = this?.saves
                 if (summonerStatistic) {
                     let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === "resilient");
                     let eidolonResilient = eidolonStatistic.will.modifiers.find(m=>m.slug === "resilient");
@@ -313,8 +313,8 @@ Hooks.once("init", () => {
             } else if (eidolonId) {
                 const eidolon = game.actors.get(eidolonId);
 
-                const summonerStatistic = this.saves
-                const eidolonStatistic = eidolon.saves
+                const summonerStatistic = this?.saves
+                const eidolonStatistic = eidolon?.saves
 
                 if (eidolonStatistic) {
                     let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === "resilient");
