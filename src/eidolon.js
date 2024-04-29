@@ -267,88 +267,44 @@ Hooks.once("init", () => {
 
 
     if (game.settings.get(moduleName, "eidolonRunes")) {
-        const originPrepareSaves = CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareSaves;
-        CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareSaves = function() {
-            originPrepareSaves.call(this);
+        const originPrepareDerivedData = CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData;
+        CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData = function() {
+            originPrepareDerivedData.call(this);
             let summonerId = this.getFlag(moduleName, 'summoner')
             let eidolonId = this.getFlag(moduleName, 'eidolon')
             if (summonerId) {
                 const summoner = game.actors.get(summonerId);
+
                 const summonerStatistic = summoner?.saves
-                const eidolonStatistic = this?.saves
-                if (summonerStatistic) {
-                    let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === "resilient");
-                    let eidolonResilient = eidolonStatistic.will.modifiers.find(m=>m.slug === "resilient");
-                    if (resilient && !eidolonResilient) {
-                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                            eidolonStatistic[save].modifiers.push(resilient)
-                            eidolonStatistic[save].dc.modifiers.push(resilient)
-                            eidolonStatistic[save].check.modifiers.push(resilient)
-                        }
-                    } else if (!resilient && eidolonResilient) {
-                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
-                        if (idx != -1) {
-                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                                eidolonStatistic[save].modifiers.splice(idx, 1)
-                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
-                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
-                            }
-                        }
-                    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
-                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
-                        if (idx != -1) {
-                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                                eidolonStatistic[save].modifiers.splice(idx, 1)
-                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
-                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
-                            }
-                        }
-                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                            eidolonStatistic[save].modifiers.push(resilient)
-                            eidolonStatistic[save].dc.modifiers.push(resilient)
-                            eidolonStatistic[save].check.modifiers.push(resilient)
-                        }
-                    }
+                const eidolonStatistic = this?.saves;
+
+                const summonerArmorStatistic = summoner?.armorClass
+                const eidolonArmorStatistic = this?.armorClass;
+
+                if (eidolonStatistic && summonerStatistic) {
+                    updateEidolonSaves(eidolonStatistic, summonerStatistic, "resilient")
+                    updateEidolonSaves(eidolonStatistic, summonerStatistic, 'bracers-of-armor')
+                }
+                if (eidolonArmorStatistic && summonerArmorStatistic) {
+                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, " Resilient ")
+                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, 'bracers-of-armor')
                 }
             } else if (eidolonId) {
                 const eidolon = game.actors.get(eidolonId);
 
-                const summonerStatistic = this?.saves
-                const eidolonStatistic = eidolon?.saves
+                const summonerStatistic = this?.saves;
+                const eidolonStatistic = eidolon?.saves;
 
-                if (eidolonStatistic) {
-                    let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === "resilient");
-                    let eidolonResilient = eidolonStatistic.will.modifiers.find(m=>m.slug === "resilient");
-                    if (resilient && !eidolonResilient) {
-                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                            eidolonStatistic[save].modifiers.push(resilient)
-                            eidolonStatistic[save].dc.modifiers.push(resilient)
-                            eidolonStatistic[save].check.modifiers.push(resilient)
-                        }
-                    } else if (!resilient && eidolonResilient) {
-                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
-                        if (idx != -1) {
-                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                                eidolonStatistic[save].modifiers.splice(idx, 1)
-                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
-                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
-                            }
-                        }
-                    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
-                        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
-                        if (idx != -1) {
-                            for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                                eidolonStatistic[save].modifiers.splice(idx, 1)
-                                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
-                                eidolonStatistic[save].check.modifiers.splice(idx, 1)
-                            }
-                        }
-                        for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                            eidolonStatistic[save].modifiers.push(resilient)
-                            eidolonStatistic[save].dc.modifiers.push(resilient)
-                            eidolonStatistic[save].check.modifiers.push(resilient)
-                        }
-                    }
+                const summonerArmorStatistic = this?.armorClass
+                const eidolonArmorStatistic = eidolon?.armorClass;
+
+                if (eidolonStatistic && summonerStatistic) {
+                    updateEidolonSaves(eidolonStatistic, summonerStatistic, "resilient")
+                    updateEidolonSaves(eidolonStatistic, summonerStatistic, 'bracers-of-armor')
+                }
+                if (eidolonArmorStatistic && summonerArmorStatistic) {
+                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, " Resilient ")
+                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, 'bracers-of-armor')
                 }
             }
         }
@@ -363,6 +319,61 @@ Hooks.once("init", () => {
         "extendBoost": extendBoost,
     })
 });
+
+function updateEidolonSaves(eidolonStatistic, summonerStatistic, slug) {
+    let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === slug)?.clone();
+    let eidolonResilient = eidolonStatistic.will.modifiers.find(m=>m.slug === slug)?.clone();
+    if (resilient && !eidolonResilient) {
+        for (const save of Object.keys(CONFIG.PF2E.saves)) {
+            eidolonStatistic[save].modifiers.push(resilient)
+            eidolonStatistic[save].dc.modifiers.push(resilient)
+            eidolonStatistic[save].check.modifiers.push(resilient)
+        }
+    } else if (!resilient && eidolonResilient) {
+        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
+        if (idx != -1) {
+            for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                eidolonStatistic[save].modifiers.splice(idx, 1)
+                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
+                eidolonStatistic[save].check.modifiers.splice(idx, 1)
+            }
+        }
+    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
+        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
+        if (idx != -1) {
+            for (const save of Object.keys(CONFIG.PF2E.saves)) {
+                eidolonStatistic[save].modifiers.splice(idx, 1)
+                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
+                eidolonStatistic[save].check.modifiers.splice(idx, 1)
+            }
+        }
+        for (const save of Object.keys(CONFIG.PF2E.saves)) {
+            eidolonStatistic[save].modifiers.push(resilient)
+            eidolonStatistic[save].dc.modifiers.push(resilient)
+            eidolonStatistic[save].check.modifiers.push(resilient)
+        }
+    }
+}
+
+function updateEidolonAC(eidolonStatistic, summonerStatistic, label) {
+    let resilient = summonerStatistic.modifiers.find(m=>m.label.includes(label) || m.slug === label)?.clone();
+    let eidolonResilient = eidolonStatistic.modifiers.find(m=>m.label.includes(label) || m.slug === label)?.clone();
+
+    if (resilient && !eidolonResilient) {
+        eidolonStatistic.modifiers.push(resilient)
+    } else if (!resilient && eidolonResilient) {
+        let idx = eidolonStatistic.modifiers.indexOf(eidolonResilient)
+        if (idx != -1) {
+            eidolonStatistic.modifiers.splice(idx, 1)
+        }
+    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
+        let idx = eidolonStatistic.modifiers.indexOf(eidolonResilient)
+        if (idx != -1) {
+            eidolonStatistic.modifiers.splice(idx, 1)
+        }
+        eidolonStatistic.modifiers.push(resilient)
+    }
+}
 
 Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
     if (!game.settings.get(moduleName, "eidolonCondition")) {return}

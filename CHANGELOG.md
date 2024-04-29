@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.0.20
+- Support of Bands of Force
+
+## Version 0.0.19
+- Resilient rune - add AC to eidolon
+
 ## Version 0.0.18
 - Fix check save dc
 

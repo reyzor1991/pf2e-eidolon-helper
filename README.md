@@ -9,3 +9,5 @@
 - Drained Condition for Eidolon
 - Summoner-Eidolon shared HP bar 
 - Extend Boost Spell
+- Add support of resilient rune (AC/saving throws) (setting option) (some eidolon feats has incorrect bomus type)
+- Support of Bands of Force
