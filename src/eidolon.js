@@ -318,13 +318,7 @@ Hooks.once("init", () => {
         }
     }
 
-    if (game.settings.get(moduleName, "sharedHP")) {
-        libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareData, 'WRAPPER')
-    }
-
-    if (game.settings.get(moduleName, "sharedHero")) {
-        libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareDataHero, 'WRAPPER')
-    }
+    libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareData, 'WRAPPER')
 
     game.pf2eeidolonhelper = mergeObject(game.pf2eeidolonhelper ?? {}, {
         "setSummonerHP": setSummonerHP,
@@ -497,29 +491,23 @@ function actorPrepareData(wrapped) {
 
     if (!summoner) return
 
-    Object.defineProperty(actor.system.attributes, 'hp', {
-        get() {
-            return deepClone(summoner.system.attributes.hp)
-        },
-        enumerable: true,
-    })
-};
+    if (game.settings.get(moduleName, "sharedHP")) {
+        Object.defineProperty(actor.system.attributes, 'hp', {
+            get() {
+                return deepClone(summoner.system.attributes.hp)
+            },
+            enumerable: true,
+        })
+    }
 
-function actorPrepareDataHero(wrapped) {
-    wrapped()
-
-    const actor = this
-    const summonerId = actor.getFlag(moduleName, 'summoner')
-    const summoner = summonerId ? game.actors.get(summonerId) : undefined
-
-    if (!summoner) return
-
-    Object.defineProperty(actor.system.resources, 'heroPoints', {
-        get() {
-            return deepClone(actor.system.resources.heroPoints)
-        },
-        enumerable: true,
-    })
+    if (game.settings.get(moduleName, "sharedHero")) {
+        Object.defineProperty(actor.system.resources, 'heroPoints', {
+            get() {
+                return deepClone(summoner.system.resources.heroPoints)
+            },
+            enumerable: true,
+        })
+    }
 };
 
 Hooks.on('preUpdateActor', (actor, updates) => {
