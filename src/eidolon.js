@@ -204,6 +204,14 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
+    game.settings.register(moduleName, "sharedHero", {
+        name: "Share Hero Points between Summoner and Eidolon",
+        scope: "world",
+        requiresReload: true,
+        config: true,
+        default: false,
+        type: Boolean,
+    });
     game.settings.register(moduleName, "eidolonCondition", {
         name: "Handle Eidolon conditions during combat",
         hint: "Decrease eidolon effect/condition when start/end turn happens",
@@ -312,6 +320,10 @@ Hooks.once("init", () => {
 
     if (game.settings.get(moduleName, "sharedHP")) {
         libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareData, 'WRAPPER')
+    }
+
+    if (game.settings.get(moduleName, "sharedHero")) {
+        libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareDataHero, 'WRAPPER')
     }
 
     game.pf2eeidolonhelper = mergeObject(game.pf2eeidolonhelper ?? {}, {
@@ -493,6 +505,23 @@ function actorPrepareData(wrapped) {
     })
 };
 
+function actorPrepareDataHero(wrapped) {
+    wrapped()
+
+    const actor = this
+    const summonerId = actor.getFlag(moduleName, 'summoner')
+    const summoner = summonerId ? game.actors.get(summonerId) : undefined
+
+    if (!summoner) return
+
+    Object.defineProperty(actor.system.resources, 'heroPoints', {
+        get() {
+            return deepClone(actor.system.resources.heroPoints)
+        },
+        enumerable: true,
+    })
+};
+
 Hooks.on('preUpdateActor', (actor, updates) => {
     if (!game.settings.get(moduleName, "sharedHP")) { return }
 
@@ -504,7 +533,7 @@ Hooks.on('preUpdateActor', (actor, updates) => {
     }
 });
 
-Hooks.on('updateActor', (actor, updates, diff, id) => {
+Hooks.on('updateActor', (actor, updates, _options, id) => {
     if (!game.settings.get(moduleName, "sharedHP")) { return }
     if (!game.user.isGM) { return }
 
@@ -512,6 +541,30 @@ Hooks.on('updateActor', (actor, updates, diff, id) => {
     if (eidolon) {
         if (updates?.system?.attributes?.hp) {
             const data = { 'system.attributes.hp': updates.system.attributes.hp }
+            eidolon.update(data, { noHook: true })
+        }
+    }
+});
+
+Hooks.on('preUpdateActor', (actor, updates) => {
+    if (!game.settings.get(moduleName, "sharedHero")) { return }
+
+    const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
+    const hpUpdate = updates?.system?.resources?.heroPoints
+    if (summoner && hpUpdate) {
+        summoner.update({ 'system.resources.heroPoints': hpUpdate }, { noHook: true })
+        delete updates.system.resources.heroPoints
+    }
+});
+
+Hooks.on('updateActor', (actor, updates, _options, id) => {
+    if (!game.settings.get(moduleName, "sharedHero")) { return }
+    if (!game.user.isGM) { return }
+
+    const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
+    if (eidolon) {
+        if (updates?.system?.resources?.heroPoints) {
+            const data = { 'system.resources.heroPoints': updates.system.resources.heroPoints }
             eidolon.update(data, { noHook: true })
         }
     }

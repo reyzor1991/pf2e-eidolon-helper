@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.21
+- Share hero point (option)
+
 ## Version 0.0.20
 - Support of Bands of Force
 
