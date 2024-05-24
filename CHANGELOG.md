@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.23
+- Macro Shrink Down
+
 ## Version 0.0.22
 - Fix conflicts
 

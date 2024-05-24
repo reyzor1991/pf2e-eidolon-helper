@@ -193,6 +193,63 @@ async function extendBoost(actor) {
     await target.createEmbeddedDocuments("Item", [spellObj]);
 };
 
+const DECREASE_SIZE = {
+    'med': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}],
+    'lg': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}, {label: 'PF2E.ActorSizeMedium', value: 'med'}],
+    'huge': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}, {label: 'PF2E.ActorSizeMedium', value: 'med'}, {label: 'PF2E.ActorSizeLarge', value: 'lg'}],
+    'grg': [
+        {label: 'PF2E.ActorSizeSmall', value: 'sm'},
+        {label: 'PF2E.ActorSizeMedium', value: 'med'},
+        {label: 'PF2E.ActorSizeLarge', value: 'lg'},
+        {label: 'PF2E.ActorSizeHuge', value: 'huge'}
+    ]
+}
+
+async function shrinkDown(actor) {
+    if (!actor) {
+        ui.notifications.info(`Need to select Actor`);
+        return
+    }
+    if ("eidolon" != actor?.class?.slug && "Eidolon" != actor?.class?.name) {
+        ui.notifications.info(`Need to select 1 token of eidolon`);
+        return
+    }
+    let currentSize = actor.system.traits.size.value;
+    let dSizes = DECREASE_SIZE[currentSize];
+    if (!dSizes?.length) {
+        ui.notifications.info(`Eidolon can't be reduced in size`);
+        return
+    }
+
+    let newSize = undefined
+    if (dSizes.length === 1) {
+        newSize = dSizes[0].value;
+    } else {
+        let options = ''
+        for (var ds of dSizes) {
+            options += `<option value=${ds.value}>${game.i18n.localize(ds.label)}</option>`;
+        }
+
+        newSize = await Dialog.confirm({
+            title: "Shrink Down",
+            content: `Select new size</br></br><select id="map">
+                        ${options}
+                    </select></br></br>`,
+            yes: (html) => { return html.find("#map").val() }
+        });
+    }
+
+    if (!newSize) {return}
+
+    let item = await fromUuid('Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF');
+    item = item?.toObject();
+    if (!item) {return}
+    item.flags = mergeObject(item.flags ?? {}, { core: { sourceId: 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF' } });
+    item.system.rules[0].value = newSize;
+
+    actor.createEmbeddedDocuments("Item", [item]);
+}
+
 Hooks.once("init", () => {
 
     game.settings.register(moduleName, "sharedHP", {
@@ -323,6 +380,7 @@ Hooks.once("init", () => {
     game.pf2eeidolonhelper = mergeObject(game.pf2eeidolonhelper ?? {}, {
         "setSummonerHP": setSummonerHP,
         "extendBoost": extendBoost,
+        "shrinkDown": shrinkDown,
     })
 });
 
