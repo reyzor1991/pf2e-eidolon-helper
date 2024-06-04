@@ -244,7 +244,7 @@ async function shrinkDown(actor) {
     let item = await fromUuid('Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF');
     item = item?.toObject();
     if (!item) {return}
-    item.flags = mergeObject(item.flags ?? {}, { core: { sourceId: 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF' } });
+    item.flags = foundry.utils.mergeObject(item.flags ?? {}, { core: { sourceId: 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF' } });
     item.system.rules[0].value = newSize;
 
     actor.createEmbeddedDocuments("Item", [item]);
@@ -377,7 +377,7 @@ Hooks.once("init", () => {
 
     libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareData, 'WRAPPER')
 
-    game.pf2eeidolonhelper = mergeObject(game.pf2eeidolonhelper ?? {}, {
+    game.pf2eeidolonhelper = foundry.utils.mergeObject(game.pf2eeidolonhelper ?? {}, {
         "setSummonerHP": setSummonerHP,
         "extendBoost": extendBoost,
         "shrinkDown": shrinkDown,
@@ -536,7 +536,7 @@ Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
 async function setEffectToActor(actor, effUuid) {
     let source = await fromUuid(effUuid)
     source = source.toObject();
-    source.flags = mergeObject(source.flags ?? {}, { core: { sourceId: effUuid } });
+    source.flags = foundry.utils.mergeObject(source.flags ?? {}, { core: { sourceId: effUuid } });
     await actor.createEmbeddedDocuments("Item", [source]);
 };
 
