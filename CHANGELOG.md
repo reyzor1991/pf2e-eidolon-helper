@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.25
+- Support of invested item for eidolon
+
 ## Version 0.0.24
 - Fix warning v12 
 

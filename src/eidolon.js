@@ -248,7 +248,27 @@ async function shrinkDown(actor) {
     item.system.rules[0].value = newSize;
 
     actor.createEmbeddedDocuments("Item", [item]);
-}
+};
+
+const checkCall = function(wrapped, ...args) {
+    const context = args[1];
+    const check = args[0];
+    if (!context || !game.settings.get(moduleName, "eidolonRunes")) return wrapped(...args);
+
+    let {actor} = args[1];
+    if (actor) {
+        const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
+        if (summoner) {
+            let summonerStatistic = summoner.skills[args[0].slug]
+            if (summonerStatistic) {
+                let modifiersForUpdate = summonerStatistic.modifiers.filter(a=>a.source && summoner.itemTypes.equipment.find(t=>t.uuid === a.source)?.isInvested);
+                check._modifiers.push(...modifiersForUpdate)
+            }
+        }
+    }
+
+    return wrapped(...args);
+};
 
 Hooks.once("init", () => {
 
@@ -376,6 +396,7 @@ Hooks.once("init", () => {
     }
 
     libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareData, 'WRAPPER')
+    libWrapper.register(moduleName, "game.pf2e.Check.roll", checkCall, "WRAPPER");
 
     game.pf2eeidolonhelper = foundry.utils.mergeObject(game.pf2eeidolonhelper ?? {}, {
         "setSummonerHP": setSummonerHP,
@@ -552,7 +573,7 @@ function actorPrepareData(wrapped) {
     if (game.settings.get(moduleName, "sharedHP")) {
         Object.defineProperty(actor.system.attributes, 'hp', {
             get() {
-                return deepClone(summoner.system.attributes.hp)
+                return foundry.utils.deepClone(summoner.system.attributes.hp)
             },
             enumerable: true,
         })
@@ -561,7 +582,7 @@ function actorPrepareData(wrapped) {
     if (game.settings.get(moduleName, "sharedHero")) {
         Object.defineProperty(actor.system.resources, 'heroPoints', {
             get() {
-                return deepClone(summoner.system.resources.heroPoints)
+                return foundry.utils.deepClone(summoner.system.resources.heroPoints)
             },
             enumerable: true,
         })
