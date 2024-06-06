@@ -259,10 +259,19 @@ const checkCall = function(wrapped, ...args) {
     if (actor) {
         const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
         if (summoner) {
-            let summonerStatistic = summoner.skills[args[0].slug]
-            if (summonerStatistic) {
-                let modifiersForUpdate = summonerStatistic.modifiers.filter(a=>a.source && summoner.itemTypes.equipment.find(t=>t.uuid === a.source)?.isInvested);
-                check._modifiers.push(...modifiersForUpdate)
+            console.log(args);
+            if (args[0].slug === "strike") {
+                let summonerStatistic = summoner.system.actions.find(a=>a.slug==="basic-unarmed")
+                if (summonerStatistic) {
+                    let modifiersForUpdate = summonerStatistic._modifiers.filter(m=>m.slug === 'weapon-potency')
+                    check._modifiers.push(...modifiersForUpdate)
+                }
+            } else {
+                let summonerStatistic = summoner.skills[args[0].slug]
+                if (summonerStatistic) {
+                    let modifiersForUpdate = summonerStatistic.modifiers.filter(a=>a.source && summoner.itemTypes.equipment.find(t=>t.uuid === a.source)?.isInvested);
+                    check._modifiers.push(...modifiersForUpdate)
+                }
             }
         }
     }

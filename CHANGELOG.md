@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.26
+- Support of invested handwraps of mighty blows for eidolon
+
 ## Version 0.0.25
 - Support of invested item for eidolon
 
