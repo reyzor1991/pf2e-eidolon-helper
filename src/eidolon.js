@@ -258,25 +258,31 @@ const checkCall = function(wrapped, ...args) {
     let {actor} = args[1];
     if (actor) {
         const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
-        if (summoner) {
-            console.log(args);
-            if (args[0].slug === "strike") {
-                let summonerStatistic = summoner.system.actions.find(a=>a.slug==="basic-unarmed")
-                if (summonerStatistic) {
-                    let modifiersForUpdate = summonerStatistic._modifiers.filter(m=>m.slug === 'weapon-potency')
-                    check._modifiers.push(...modifiersForUpdate)
-                }
-            } else {
+        if (summoner && args[0].slug != "strike") {
                 let summonerStatistic = summoner.skills[args[0].slug]
                 if (summonerStatistic) {
                     let modifiersForUpdate = summonerStatistic.modifiers.filter(a=>a.source && summoner.itemTypes.equipment.find(t=>t.uuid === a.source)?.isInvested);
                     check._modifiers.push(...modifiersForUpdate)
                 }
-            }
         }
     }
 
     return wrapped(...args);
+};
+
+const weaponData = function(wrapped) {
+    wrapped();
+
+    if (!this.actor) {return}
+
+    const summoner = game.actors.get(this.actor.getFlag(moduleName, 'summoner'));
+    if (!summoner) {return;}
+    let weapon = summoner.itemTypes.weapon.find(w=>w.slug==="handwraps-of-mighty-blows" && w.isInvested)
+    if (!weapon) {return}
+
+    this.system.runes.potency = weapon.system.runes.potency;
+    this.system.runes.striking = weapon.system.runes.striking;
+    this.system.runes.property = weapon.system.runes.property.slice();
 };
 
 Hooks.once("init", () => {
@@ -363,45 +369,56 @@ Hooks.once("init", () => {
     if (game.settings.get(moduleName, "eidolonRunes")) {
         const originPrepareDerivedData = CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData;
         CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData = function() {
-            originPrepareDerivedData.call(this);
-            let summonerId = this.getFlag(moduleName, 'summoner')
-            let eidolonId = this.getFlag(moduleName, 'eidolon')
-            if (summonerId) {
-                const summoner = game.actors.get(summonerId);
+            if (!game.ready) {return  originPrepareDerivedData.call(this);}
+            const summoner = game.actors.get(this.getFlag(moduleName, 'summoner'));
+            if (!summoner) {return  originPrepareDerivedData.call(this);}
 
-                const summonerStatistic = summoner?.saves
-                const eidolonStatistic = this?.saves;
+            let acSlugs = ['bracers-of-armor']
+            let savingSlugs = ['bracers-of-armor', 'resilient']
+            if (summoner.wornArmor?.slug) {
+                acSlugs.push(summoner.wornArmor.slug)
+            }
 
-                const summonerArmorStatistic = summoner?.armorClass
-                const eidolonArmorStatistic = this?.armorClass;
+            let bracersArmorM = summoner.system.attributes.ac.modifiers.filter(m=>acSlugs.includes(m.slug));
+            if (bracersArmorM.length) {
+                const mm = (this.synthetics.modifiers['ac'] ??= []);
 
-                if (eidolonStatistic && summonerStatistic) {
-                    updateEidolonSaves(eidolonStatistic, summonerStatistic, "resilient")
-                    updateEidolonSaves(eidolonStatistic, summonerStatistic, 'bracers-of-armor')
-                }
-                if (eidolonArmorStatistic && summonerArmorStatistic) {
-                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, " Resilient ")
-                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, 'bracers-of-armor')
-                }
-            } else if (eidolonId) {
-                const eidolon = game.actors.get(eidolonId);
-
-                const summonerStatistic = this?.saves;
-                const eidolonStatistic = eidolon?.saves;
-
-                const summonerArmorStatistic = this?.armorClass
-                const eidolonArmorStatistic = eidolon?.armorClass;
-
-                if (eidolonStatistic && summonerStatistic) {
-                    updateEidolonSaves(eidolonStatistic, summonerStatistic, "resilient")
-                    updateEidolonSaves(eidolonStatistic, summonerStatistic, 'bracers-of-armor')
-                }
-                if (eidolonArmorStatistic && summonerArmorStatistic) {
-                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, " Resilient ")
-                    updateEidolonAC(eidolonArmorStatistic, summonerArmorStatistic, 'bracers-of-armor')
+                for (const m of bracersArmorM) {
+                    mm.push((options)=>{
+                        let modi = new game.pf2e.Modifier({
+                            slug: m.slug,
+                            label: m.label,
+                            modifier: m.modifier,
+                            type: m.type,
+                        })
+                        if (options.test) modi.test(options.test);
+                        return modi;
+                    });
                 }
             }
+
+            let savingMods = summoner.saves.fortitude.modifiers.filter(m=>savingSlugs.includes(m.slug))
+            if (savingMods.length) {
+                const mmm = (this.synthetics.modifiers['saving-throw'] ??= []);
+
+                for (const m of savingMods) {
+                    mmm.push((options)=>{
+                        let modi = new game.pf2e.Modifier({
+                            slug: m.slug,
+                            label: m.label,
+                            modifier: m.modifier,
+                            type: m.type,
+                        })
+                        if (options.test) modi.test(options.test);
+                        return modi;
+                    });
+                }
+            }
+
+            originPrepareDerivedData.call(this);
         }
+
+        libWrapper.register(moduleName, 'CONFIG.PF2E.Item.documentClasses.weapon.prototype.prepareBaseData', weaponData, 'WRAPPER')
     }
 
     libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareData, 'WRAPPER')
@@ -413,61 +430,6 @@ Hooks.once("init", () => {
         "shrinkDown": shrinkDown,
     })
 });
-
-function updateEidolonSaves(eidolonStatistic, summonerStatistic, slug) {
-    let resilient = summonerStatistic.will.modifiers.find(m=>m.slug === slug)?.clone();
-    let eidolonResilient = eidolonStatistic.will.modifiers.find(m=>m.slug === slug)?.clone();
-    if (resilient && !eidolonResilient) {
-        for (const save of Object.keys(CONFIG.PF2E.saves)) {
-            eidolonStatistic[save].modifiers.push(resilient)
-            eidolonStatistic[save].dc.modifiers.push(resilient)
-            eidolonStatistic[save].check.modifiers.push(resilient)
-        }
-    } else if (!resilient && eidolonResilient) {
-        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
-        if (idx != -1) {
-            for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                eidolonStatistic[save].modifiers.splice(idx, 1)
-                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
-                eidolonStatistic[save].check.modifiers.splice(idx, 1)
-            }
-        }
-    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
-        let idx = eidolonStatistic.will.modifiers.indexOf(eidolonResilient)
-        if (idx != -1) {
-            for (const save of Object.keys(CONFIG.PF2E.saves)) {
-                eidolonStatistic[save].modifiers.splice(idx, 1)
-                eidolonStatistic[save].dc.modifiers.splice(idx, 1)
-                eidolonStatistic[save].check.modifiers.splice(idx, 1)
-            }
-        }
-        for (const save of Object.keys(CONFIG.PF2E.saves)) {
-            eidolonStatistic[save].modifiers.push(resilient)
-            eidolonStatistic[save].dc.modifiers.push(resilient)
-            eidolonStatistic[save].check.modifiers.push(resilient)
-        }
-    }
-}
-
-function updateEidolonAC(eidolonStatistic, summonerStatistic, label) {
-    let resilient = summonerStatistic.modifiers.find(m=>m.label.includes(label) || m.slug === label)?.clone();
-    let eidolonResilient = eidolonStatistic.modifiers.find(m=>m.label.includes(label) || m.slug === label)?.clone();
-
-    if (resilient && !eidolonResilient) {
-        eidolonStatistic.modifiers.push(resilient)
-    } else if (!resilient && eidolonResilient) {
-        let idx = eidolonStatistic.modifiers.indexOf(eidolonResilient)
-        if (idx != -1) {
-            eidolonStatistic.modifiers.splice(idx, 1)
-        }
-    } else if (resilient && eidolonResilient && resilient.modifier != eidolonResilient.modifier) {
-        let idx = eidolonStatistic.modifiers.indexOf(eidolonResilient)
-        if (idx != -1) {
-            eidolonStatistic.modifiers.splice(idx, 1)
-        }
-        eidolonStatistic.modifiers.push(resilient)
-    }
-}
 
 Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
     if (!game.settings.get(moduleName, "eidolonCondition")) {return}
@@ -572,14 +534,18 @@ async function setEffectToActor(actor, effUuid) {
 
 function actorPrepareData(wrapped) {
     wrapped()
+    if (!game.ready) return;
 
     const actor = this
-    const summonerId = actor.getFlag(moduleName, 'summoner')
-    const summoner = summonerId ? game.actors.get(summonerId) : undefined
+    const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
+    const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
 
-    if (!summoner) return
+    if (eidolon) {
+        eidolon.reset();
+        eidolon.sheet?.render();
+    }
 
-    if (game.settings.get(moduleName, "sharedHP")) {
+    if (game.settings.get(moduleName, "sharedHP") && summoner) {
         Object.defineProperty(actor.system.attributes, 'hp', {
             get() {
                 return foundry.utils.deepClone(summoner.system.attributes.hp)
@@ -588,7 +554,7 @@ function actorPrepareData(wrapped) {
         })
     }
 
-    if (game.settings.get(moduleName, "sharedHero")) {
+    if (game.settings.get(moduleName, "sharedHero") && summoner) {
         Object.defineProperty(actor.system.resources, 'heroPoints', {
             get() {
                 return foundry.utils.deepClone(summoner.system.resources.heroPoints)
