@@ -55,12 +55,12 @@ async function setSummonerHP(actor) {
         ui.notifications.info(`Actor should be Summoner`);
         return
     }
-    if (game.user.targets.size != 1) {
+    if (game.user.targets.size !== 1) {
         ui.notifications.info(`Need to select 1 token of eidolon as target to set HP of summoner`);
         return
     }
     const target = game.user.targets.first().actor;
-    if ("eidolon" != target?.class?.slug && "Eidolon" != target?.class?.name) {
+    if ("eidolon" !== target?.class?.slug && "Eidolon" !== target?.class?.name) {
         ui.notifications.info(`Need to select 1 token of eidolon as target to set HP of summoner`);
         return
     }
@@ -74,7 +74,7 @@ async function setSummonerHP(actor) {
         actor.setFlag(moduleName, "eidolon", target.id);
         ui.notifications.info(`Summoner and Eidolon were linked`);
     }
-};
+}
 
 Hooks.on("preCreateItem", (item, data) => {
     if ("condition" === data.type && data.system.slug === "drained") {
@@ -117,7 +117,7 @@ async function addDrainedToSummoner(summoner, data) {
     if (!sumDrained) {
         await summoner.createEmbeddedDocuments("Item", [data]);
     }
-};
+}
 
 async function extendBoost(actor) {
     if (!actor) {
@@ -191,7 +191,7 @@ async function extendBoost(actor) {
     }
 
     await target.createEmbeddedDocuments("Item", [spellObj]);
-};
+}
 
 const DECREASE_SIZE = {
     'med': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}],
@@ -248,7 +248,7 @@ async function shrinkDown(actor) {
     item.system.rules[0].value = newSize;
 
     actor.createEmbeddedDocuments("Item", [item]);
-};
+}
 
 const checkCall = function(wrapped, ...args) {
     const context = args[1];
@@ -485,7 +485,7 @@ Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
 
 function isSummoner(actor) {
     return "character" === actor?.type && ("summoner" === actor?.class?.slug || actor.itemTypes.feat.find(a=>a.slug==='summoner-dedication'))
-};
+}
 
 async function dismissEidolon(actorId) {
     game.scenes.current.tokens.filter(a=>a?.actor?.id === actorId)
@@ -530,7 +530,7 @@ async function setEffectToActor(actor, effUuid) {
     source = source.toObject();
     source.flags = foundry.utils.mergeObject(source.flags ?? {}, { core: { sourceId: effUuid } });
     await actor.createEmbeddedDocuments("Item", [source]);
-};
+}
 
 function actorPrepareData(wrapped) {
     wrapped()
@@ -562,7 +562,7 @@ function actorPrepareData(wrapped) {
             enumerable: true,
         })
     }
-};
+}
 
 Hooks.on('preUpdateActor', (actor, updates) => {
     if (!game.settings.get(moduleName, "sharedHP")) { return }
@@ -577,7 +577,7 @@ Hooks.on('preUpdateActor', (actor, updates) => {
 
 Hooks.on('updateActor', (actor, updates, _options, id) => {
     if (!game.settings.get(moduleName, "sharedHP")) { return }
-    if (!game.user.isGM) { return }
+    if (game.user !== game.users.activeGM) { return }
 
     const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
     if (eidolon) {
@@ -601,7 +601,7 @@ Hooks.on('preUpdateActor', (actor, updates) => {
 
 Hooks.on('updateActor', (actor, updates, _options, id) => {
     if (!game.settings.get(moduleName, "sharedHero")) { return }
-    if (!game.user.isGM) { return }
+    if (game.user !== game.users.activeGM) { return }
 
     const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
     if (eidolon) {
