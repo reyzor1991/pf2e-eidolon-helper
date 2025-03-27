@@ -363,8 +363,22 @@ Hooks.once("init", () => {
             return r;
         }
 
+        libWrapper.register(moduleName, "game.pf2e.TextEditor.enrichString", function(wrapped, ...args) {
+            let data = args[0]
+            if (data && data[1] === 'Check' && data[2]?.includes("against:spell")) {
+                if (args[1] && args[1]?.rollData && args[1]?.rollData?.actor) {
+                    let actor = args[1]?.rollData?.actor;
+                    if (actor?.flags?.["pf2e-eidolon-helper"]?.summoner) {
+                        let summoner = game.actors.get(actor.flags["pf2e-eidolon-helper"].summoner);
+                        if (summoner) {
+                            args[1].rollData.actor = summoner;
+                        }
+                    }
+                }
+            }
+            return wrapped(...args);
+        }, "WRAPPER");
     }
-
 
     if (game.settings.get(moduleName, "eidolonRunes")) {
         const originPrepareDerivedData = CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData;

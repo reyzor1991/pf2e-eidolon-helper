@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.1.2
+- Fix inline spell check roll
+
 ## Version 0.1.1
 - Fixes
 
