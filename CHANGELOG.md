@@ -1,7 +1,10 @@
 # Changelog
 
-## Version 0.1.3
+## Version 0.1.4
 - Fix striking runes
+
+## Version 0.1.3
+- Fix checking eidolon for spell cast
 
 ## Version 0.1.2
 - Fix inline spell check roll
