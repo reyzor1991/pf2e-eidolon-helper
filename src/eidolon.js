@@ -144,8 +144,8 @@ async function extendBoost(actor) {
 
     const defDC = (dcByLevel.get(actor.level) ?? 50);
 
-    const { dc, spell } = await Dialog.wait({
-        title:"Use spell",
+    const {dc, spell} = await Dialog.wait({
+        title: "Use spell",
         content: `
             <h3>DC of check</h3>
             <input id="spell-dc" type="number" min="0" value=${defDC} />
@@ -155,15 +155,17 @@ async function extendBoost(actor) {
             </select><hr>
         `,
         buttons: {
-                ok: {
-                    label: "Cast",
-                    icon: "<i class='fa-solid fa-magic'></i>",
-                    callback: (html) => { return { dc: parseInt(html[0].querySelector("#spell-dc").value), spell: parseInt(html[0].querySelector("#spells").value)} }
-                },
-                cancel: {
-                    label: "Cancel",
-                    icon: "<i class='fa-solid fa-ban'></i>",
+            ok: {
+                label: "Cast",
+                icon: "<i class='fa-solid fa-magic'></i>",
+                callback: (html) => {
+                    return {dc: parseInt(html[0].querySelector("#spell-dc").value), spell: parseInt(html[0].querySelector("#spells").value)}
                 }
+            },
+            cancel: {
+                label: "Cancel",
+                icon: "<i class='fa-solid fa-ban'></i>",
+            }
         },
         render: (html) => {
             html.parent().parent()[0].style.cssText += 'box-shadow: 0 0 10px purple;';
@@ -171,9 +173,14 @@ async function extendBoost(actor) {
         default: "ok"
     });
 
-    if ( dc === undefined ) { return; }
+    if (dc === undefined) {
+        return;
+    }
 
-    const degreeOfSuccess = (await actor.skills[eidolonTraditionSkill[target.ancestry.slug]??'arcana'].roll({dc:{value: dc}, skipDialog: true})).degreeOfSuccess;
+    const degreeOfSuccess = (await actor.skills[eidolonTraditionSkill[target.ancestry.slug] ?? 'arcana'].roll({
+        dc: {value: dc},
+        skipDialog: true
+    })).degreeOfSuccess;
 
     const spellUuid = spell === 0 ? 'Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW' : 'Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF';
 
@@ -187,7 +194,7 @@ async function extendBoost(actor) {
     }
 
     if (degreeOfSuccess === 3 || degreeOfSuccess === 2) {
-        await actor.update({ "system.resources.focus.value": actor.system.resources.focus.value - 1})
+        await actor.update({"system.resources.focus.value": actor.system.resources.focus.value - 1})
     }
 
     await target.createEmbeddedDocuments("Item", [spellObj]);
@@ -196,7 +203,10 @@ async function extendBoost(actor) {
 const DECREASE_SIZE = {
     'med': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}],
     'lg': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}, {label: 'PF2E.ActorSizeMedium', value: 'med'}],
-    'huge': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}, {label: 'PF2E.ActorSizeMedium', value: 'med'}, {label: 'PF2E.ActorSizeLarge', value: 'lg'}],
+    'huge': [{label: 'PF2E.ActorSizeSmall', value: 'sm'}, {label: 'PF2E.ActorSizeMedium', value: 'med'}, {
+        label: 'PF2E.ActorSizeLarge',
+        value: 'lg'
+    }],
     'grg': [
         {label: 'PF2E.ActorSizeSmall', value: 'sm'},
         {label: 'PF2E.ActorSizeMedium', value: 'med'},
@@ -235,22 +245,28 @@ async function shrinkDown(actor) {
             content: `Select new size</br></br><select id="map">
                         ${options}
                     </select></br></br>`,
-            yes: (html) => { return html.find("#map").val() }
+            yes: (html) => {
+                return html.find("#map").val()
+            }
         });
     }
 
-    if (!newSize) {return}
+    if (!newSize) {
+        return
+    }
 
     let item = await fromUuid('Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF');
     item = item?.toObject();
-    if (!item) {return}
-    item.flags = foundry.utils.mergeObject(item.flags ?? {}, { core: { sourceId: 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF' } });
+    if (!item) {
+        return
+    }
+    item.flags = foundry.utils.mergeObject(item.flags ?? {}, {core: {sourceId: 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF'}});
     item.system.rules[0].value = newSize;
 
     actor.createEmbeddedDocuments("Item", [item]);
 }
 
-const checkCall = function(wrapped, ...args) {
+const checkCall = function (wrapped, ...args) {
     const context = args[1];
     const check = args[0];
     if (!context || !game.settings.get(moduleName, "eidolonRunes")) return wrapped(...args);
@@ -259,30 +275,31 @@ const checkCall = function(wrapped, ...args) {
     if (actor) {
         const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
         if (summoner && args[0].slug != "strike") {
-                let summonerStatistic = summoner.skills[args[0].slug]
-                if (summonerStatistic) {
-                    let modifiersForUpdate = summonerStatistic.modifiers.filter(a=>a.source && summoner.itemTypes.equipment.find(t=>t.uuid === a.source)?.isInvested);
-                    check._modifiers.push(...modifiersForUpdate)
-                }
+            let summonerStatistic = summoner.skills[args[0].slug]
+            if (summonerStatistic) {
+                let modifiersForUpdate = summonerStatistic.modifiers.filter(a => a.source && summoner.itemTypes.equipment.find(t => t.uuid === a.source)?.isInvested);
+                check._modifiers.push(...modifiersForUpdate)
+            }
         }
     }
 
     return wrapped(...args);
 };
 
-const weaponData = function(wrapped) {
+const weaponData = function (wrapped) {
+    if (this.actor) {
+        const summoner = game.actors.get(this.actor.getFlag(moduleName, 'summoner'));
+        if (summoner) {
+            let weapon = summoner.itemTypes.weapon.find(w => w.slug === "handwraps-of-mighty-blows" && w.isInvested)
+            if (weapon) {
+                this.system.runes.potency = weapon.system.runes.potency;
+                this.system.runes.striking = weapon.system.runes.striking;
+                this.system.runes.property = weapon.system.runes.property.slice();
+            }
+        }
+    }
     wrapped();
 
-    if (!this.actor) {return}
-
-    const summoner = game.actors.get(this.actor.getFlag(moduleName, 'summoner'));
-    if (!summoner) {return;}
-    let weapon = summoner.itemTypes.weapon.find(w=>w.slug==="handwraps-of-mighty-blows" && w.isInvested)
-    if (!weapon) {return}
-
-    this.system.runes.potency = weapon.system.runes.potency;
-    this.system.runes.striking = weapon.system.runes.striking;
-    this.system.runes.property = weapon.system.runes.property.slice();
 };
 
 Hooks.once("init", () => {
@@ -334,7 +351,7 @@ Hooks.once("init", () => {
     if (game.settings.get(moduleName, "eidolonSpell")) {
 
         const originGetChatData = CONFIG.PF2E.Item.documentClasses.spell.prototype.getChatData;
-        CONFIG.PF2E.Item.documentClasses.spell.prototype.getChatData = async function(htmlOptions={}, _rollOptions2={}) {
+        CONFIG.PF2E.Item.documentClasses.spell.prototype.getChatData = async function (htmlOptions = {}, _rollOptions2 = {}) {
             const r = await originGetChatData.call(this, htmlOptions, _rollOptions2);
             if ("character" === this.actor?.type && "eidolon" === this.actor?.class?.slug) {
                 const summonerId = this.actor.getFlag(moduleName, 'summoner')
@@ -342,12 +359,12 @@ Hooks.once("init", () => {
                     const summoner = game.actors.get(summonerId);
 
                     const originStatistic = this.trickData?.statistic ?? this.spellcasting?.statistic;
-                    const summonerStatistic = summoner?.spellcasting?.find(a=>a.attribute === originStatistic.attribute)
+                    const summonerStatistic = summoner?.spellcasting?.find(a => a.attribute === originStatistic.attribute)
 
                     if (summonerStatistic && r?.isSave) {
                         const saveKey = this.system.defense.save.basic ? "PF2E.SaveDCLabelBasic" : "PF2E.SaveDCLabel";
 
-                        r['save']['label'] = game.i18n.format(saveKey, { dc: summonerStatistic.statistic.dc.value, type: r.save.type });
+                        r['save']['label'] = game.i18n.format(saveKey, {dc: summonerStatistic.statistic.dc.value, type: r.save.type});
                         r['save']['breakdown'] = summonerStatistic.statistic.dc.breakdown;
                         r['save']['value'] = summonerStatistic.statistic.dc.value;
                     }
@@ -363,7 +380,7 @@ Hooks.once("init", () => {
             return r;
         }
 
-        libWrapper.register(moduleName, "game.pf2e.TextEditor.enrichString", function(wrapped, ...args) {
+        libWrapper.register(moduleName, "game.pf2e.TextEditor.enrichString", function (wrapped, ...args) {
             let data = args[0]
             if (data && data[1] === 'Check' && data[2]?.includes("against:spell")) {
                 if (args[1] && args[1]?.rollData && args[1]?.rollData?.actor) {
@@ -382,10 +399,14 @@ Hooks.once("init", () => {
 
     if (game.settings.get(moduleName, "eidolonRunes")) {
         const originPrepareDerivedData = CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData;
-        CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData = function() {
-            if (!game.ready) {return  originPrepareDerivedData.call(this);}
+        CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData = function () {
+            if (!game.ready) {
+                return originPrepareDerivedData.call(this);
+            }
             const summoner = game.actors.get(this.getFlag(moduleName, 'summoner'));
-            if (!summoner) {return  originPrepareDerivedData.call(this);}
+            if (!summoner) {
+                return originPrepareDerivedData.call(this);
+            }
 
             let acSlugs = ['bracers-of-armor']
             let savingSlugs = ['bracers-of-armor', 'resilient']
@@ -393,12 +414,12 @@ Hooks.once("init", () => {
                 acSlugs.push(summoner.wornArmor.slug)
             }
 
-            let bracersArmorM = summoner.system.attributes.ac.modifiers.filter(m=>acSlugs.includes(m.slug));
+            let bracersArmorM = summoner.system.attributes.ac.modifiers.filter(m => acSlugs.includes(m.slug));
             if (bracersArmorM.length) {
                 const mm = (this.synthetics.modifiers['ac'] ??= []);
 
                 for (const m of bracersArmorM) {
-                    mm.push((options)=>{
+                    mm.push((options) => {
                         let modi = new game.pf2e.Modifier({
                             slug: m.slug,
                             label: m.label,
@@ -411,12 +432,12 @@ Hooks.once("init", () => {
                 }
             }
 
-            let savingMods = summoner.saves.fortitude.modifiers.filter(m=>savingSlugs.includes(m.slug))
+            let savingMods = summoner.saves.fortitude.modifiers.filter(m => savingSlugs.includes(m.slug))
             if (savingMods.length) {
                 const mmm = (this.synthetics.modifiers['saving-throw'] ??= []);
 
                 for (const m of savingMods) {
-                    mmm.push((options)=>{
+                    mmm.push((options) => {
                         let modi = new game.pf2e.Modifier({
                             slug: m.slug,
                             label: m.label,
@@ -446,7 +467,9 @@ Hooks.once("init", () => {
 });
 
 Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
-    if (!game.settings.get(moduleName, "eidolonCondition")) {return}
+    if (!game.settings.get(moduleName, "eidolonCondition")) {
+        return
+    }
     const actor = combatant.actor;
     if (isSummoner(actor)) {
         let ei = actor.getFlag(moduleName, "eidolon");
@@ -463,7 +486,7 @@ Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
                 } else {
                     await game.pf2e.ConditionManager.updateConditionValue(stunned.id, ei, stunned.value - actionCount)
                 }
-                 ui.notifications.info(`${ei.name} has only ${lastAction} action${lastAction <= 1?"":"s"}`);
+                ui.notifications.info(`${ei.name} has only ${lastAction} action${lastAction <= 1 ? "" : "s"}`);
             }
 
             for (const effect of ei.itemTypes.effect) {
@@ -475,7 +498,9 @@ Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
 })
 
 Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
-    if (!game.settings.get(moduleName, "eidolonCondition")) {return}
+    if (!game.settings.get(moduleName, "eidolonCondition")) {
+        return
+    }
     const actor = combatant.actor;
     if (isSummoner(actor)) {
         let ei = actor.getFlag(moduleName, "eidolon");
@@ -485,9 +510,9 @@ Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
             if (frightened && !frightened.isLocked) {
                 await ei.decreaseCondition("frightened");
             }
-            const token = game.canvas.scene.tokens.find(a=>a.actorId===ei.id);
+            const token = game.canvas.scene.tokens.find(a => a.actorId === ei.id);
             for (const condition of ei.conditions.active) {
-                await condition.onEndTurn({ token });
+                await condition.onEndTurn({token});
             }
             for (const effect of ei.itemTypes.effect) {
                 await effect.onTurnStartEnd('end');
@@ -498,12 +523,12 @@ Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
 });
 
 function isSummoner(actor) {
-    return "character" === actor?.type && ("summoner" === actor?.class?.slug || actor.itemTypes.feat.find(a=>a.slug==='summoner-dedication'))
+    return "character" === actor?.type && ("summoner" === actor?.class?.slug || actor.itemTypes.feat.find(a => a.slug === 'summoner-dedication'))
 }
 
 async function dismissEidolon(actorId) {
-    game.scenes.current.tokens.filter(a=>a?.actor?.id === actorId)
-        .forEach(t=>{
+    game.scenes.current.tokens.filter(a => a?.actor?.id === actorId)
+        .forEach(t => {
             window?.warpgate?.dismiss(t.id)
         });
 }
@@ -523,13 +548,19 @@ const eidolonTraditionSkill = {
     'undead-eidolon': 'religion',
 }
 
-Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
-    if (!message?.flags?.pf2e?.origin?.type) {return;}
-    if (!messageType(message, undefined) && !messageType(message, "spell-cast")){return}
+Hooks.on('preCreateChatMessage', async (message, user, _options, userId) => {
+    if (!message?.flags?.pf2e?.origin?.type) {
+        return;
+    }
+    if (!messageType(message, undefined) && !messageType(message, "spell-cast")) {
+        return
+    }
     const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid));
 
     const ei = game.actors.get(message.actor.getFlag(moduleName, "eidolon"));
-    if (!ei) {return}
+    if (!ei) {
+        return
+    }
     if (!game.modules.get("pf2e-action-support-engine")?.active) {
         if (_obj?.slug === "boost-eidolon") {
             setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
@@ -542,7 +573,7 @@ Hooks.on('preCreateChatMessage', async (message, user, _options, userId)=>{
 async function setEffectToActor(actor, effUuid) {
     let source = await fromUuid(effUuid)
     source = source.toObject();
-    source.flags = foundry.utils.mergeObject(source.flags ?? {}, { core: { sourceId: effUuid } });
+    source.flags = foundry.utils.mergeObject(source.flags ?? {}, {core: {sourceId: effUuid}});
     await actor.createEmbeddedDocuments("Item", [source]);
 }
 
@@ -579,49 +610,61 @@ function actorPrepareData(wrapped) {
 }
 
 Hooks.on('preUpdateActor', (actor, updates) => {
-    if (!game.settings.get(moduleName, "sharedHP")) { return }
+    if (!game.settings.get(moduleName, "sharedHP")) {
+        return
+    }
 
     const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
     const hpUpdate = updates?.system?.attributes?.hp
     if (summoner && hpUpdate) {
-        summoner.update({ 'system.attributes.hp': hpUpdate }, { noHook: true })
+        summoner.update({'system.attributes.hp': hpUpdate}, {noHook: true})
         delete updates.system.attributes.hp
     }
 });
 
 Hooks.on('updateActor', (actor, updates, _options, id) => {
-    if (!game.settings.get(moduleName, "sharedHP")) { return }
-    if (game.user !== game.users.activeGM) { return }
+    if (!game.settings.get(moduleName, "sharedHP")) {
+        return
+    }
+    if (game.user !== game.users.activeGM) {
+        return
+    }
 
     const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
     if (eidolon) {
         if (updates?.system?.attributes?.hp) {
-            const data = { 'system.attributes.hp': updates.system.attributes.hp }
-            eidolon.update(data, { noHook: true })
+            const data = {'system.attributes.hp': updates.system.attributes.hp}
+            eidolon.update(data, {noHook: true})
         }
     }
 });
 
 Hooks.on('preUpdateActor', (actor, updates) => {
-    if (!game.settings.get(moduleName, "sharedHero")) { return }
+    if (!game.settings.get(moduleName, "sharedHero")) {
+        return
+    }
 
     const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
     const hpUpdate = updates?.system?.resources?.heroPoints
     if (summoner && hpUpdate) {
-        summoner.update({ 'system.resources.heroPoints': hpUpdate }, { noHook: true })
+        summoner.update({'system.resources.heroPoints': hpUpdate}, {noHook: true})
         delete updates.system.resources.heroPoints
     }
 });
 
 Hooks.on('updateActor', (actor, updates, _options, id) => {
-    if (!game.settings.get(moduleName, "sharedHero")) { return }
-    if (game.user !== game.users.activeGM) { return }
+    if (!game.settings.get(moduleName, "sharedHero")) {
+        return
+    }
+    if (game.user !== game.users.activeGM) {
+        return
+    }
 
     const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
     if (eidolon) {
         if (updates?.system?.resources?.heroPoints) {
-            const data = { 'system.resources.heroPoints': updates.system.resources.heroPoints }
-            eidolon.update(data, { noHook: true })
+            const data = {'system.resources.heroPoints': updates.system.resources.heroPoints}
+            eidolon.update(data, {noHook: true})
         }
     }
 });
@@ -641,7 +684,7 @@ Hooks.on("updateItem", (item) => {
                         }
                     })
                 }
-                eidolon.render(false, { action: 'update' })
+                eidolon.render(false, {action: 'update'})
             }
         }
     }
@@ -657,7 +700,7 @@ Hooks.on("createItem", async (item) => {
                     eff = (await fromUuid("Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.4HfdagPN5nq5BBDV")).toObject();
                     eidolon.createEmbeddedDocuments("Item", [eff]);
                 }
-                eidolon.render(false, { action: 'update' })
+                eidolon.render(false, {action: 'update'})
             }
         }
     }
@@ -672,7 +715,7 @@ Hooks.on("deleteItem", (item) => {
                 if (eff) {
                     eff.delete();
                 }
-                eidolon.render(false, { action: 'update' })
+                eidolon.render(false, {action: 'update'})
             }
         }
     } else if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug && item.slug === "drained-eidolon") {

@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.1.3
+- Fix striking runes
+
 ## Version 0.1.2
 - Fix inline spell check roll
 
