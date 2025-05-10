@@ -34,10 +34,6 @@ function messageType(message, type) {
     return type === message?.flags?.pf2e?.context?.type;
 }
 
-function actorFeat(actor, feat) {
-    return actor?.itemTypes?.feat?.find((c => feat === c.slug))
-}
-
 function hasEffect(actor, eff) {
     return actor?.itemTypes?.effect?.find((c => eff === c.slug))
 }
@@ -95,9 +91,7 @@ Hooks.on("preCreateItem", async (item, data) => {
                 const summonerId = item.actor.getFlag(moduleName, 'summoner')
                 if (summonerId) {
                     const summoner = game.actors.get(summonerId);
-
-                    const as = await fromUuid(f.flags.summoner);
-                    as.increaseCondition('dying')
+                    summoner.increaseCondition('dying')
                 }
             }
         }
@@ -132,44 +126,46 @@ async function extendBoost(actor) {
         ui.notifications.info(`Actor don't have focus points`);
         return
     }
-    if (game.user.targets.size != 1) {
+    if (game.user.targets.size !== 1) {
         ui.notifications.info(`Need to select 1 token of eidolon as target`);
         return
     }
     const target = game.user.targets.first().actor;
-    if ("eidolon" != target?.class?.slug && "Eidolon" != target?.class?.name) {
+    if ("eidolon" !== target?.class?.slug && "Eidolon" !== target?.class?.name) {
         ui.notifications.info(`Need to select 1 token of eidolon as target`);
         return
     }
 
     const defDC = (dcByLevel.get(actor.level) ?? 50);
 
-    const {dc, spell} = await Dialog.wait({
-        title: "Use spell",
+    const {dc, spell} = await foundry.applications.api.DialogV2.wait({
+        window: {title: "Use spell"},
         content: `
-            <h3>DC of check</h3>
+            <h4>DC of check</h4>
             <input id="spell-dc" type="number" min="0" value=${defDC} />
-            <hr><h3>Spell</h3><select id="spells">
+            <h4>Spell</h4><select id="spells">
                 <option value=0>Boost Eidolon</option>
                 <option value=1>Reinforce Eidolon</option>
             </select><hr>
         `,
-        buttons: {
-            ok: {
+        buttons: [
+            {
+                action: 'ok',
                 label: "Cast",
                 icon: "<i class='fa-solid fa-magic'></i>",
-                callback: (html) => {
-                    return {dc: parseInt(html[0].querySelector("#spell-dc").value), spell: parseInt(html[0].querySelector("#spells").value)}
+                callback: (e) => {
+                    return {
+                        dc: parseInt(e.target.closest('form').querySelector("#spell-dc").value),
+                        spell: parseInt(e.target.closest('form').querySelector("#spells").value)
+                    }
                 }
             },
-            cancel: {
+            {
+                action: 'cancel',
                 label: "Cancel",
                 icon: "<i class='fa-solid fa-ban'></i>",
             }
-        },
-        render: (html) => {
-            html.parent().parent()[0].style.cssText += 'box-shadow: 0 0 10px purple;';
-        },
+        ],
         default: "ok"
     });
 
@@ -220,7 +216,7 @@ async function shrinkDown(actor) {
         ui.notifications.info(`Need to select Actor`);
         return
     }
-    if ("eidolon" != actor?.class?.slug && "Eidolon" != actor?.class?.name) {
+    if ("eidolon" !== actor?.class?.slug && "Eidolon" !== actor?.class?.name) {
         ui.notifications.info(`Need to select 1 token of eidolon`);
         return
     }
@@ -240,13 +236,15 @@ async function shrinkDown(actor) {
             options += `<option value=${ds.value}>${game.i18n.localize(ds.label)}</option>`;
         }
 
-        newSize = await Dialog.confirm({
-            title: "Shrink Down",
+        newSize = await foundry.applications.api.DialogV2.confirm({
+            window: {title: "Shrink Down"},
             content: `Select new size</br></br><select id="map">
                         ${options}
                     </select></br></br>`,
-            yes: (html) => {
-                return html.find("#map").val()
+            yes: {
+                callback: (e) => {
+                    return e.target.closest('form').querySelector("#map").value
+                }
             }
         });
     }
@@ -274,7 +272,7 @@ const checkCall = function (wrapped, ...args) {
     let {actor} = args[1];
     if (actor) {
         const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
-        if (summoner && args[0].slug != "strike") {
+        if (summoner && args[0].slug !== "strike") {
             let summonerStatistic = summoner.skills[args[0].slug]
             if (summonerStatistic) {
                 let modifiersForUpdate = summonerStatistic.modifiers.filter(a => a.source && summoner.itemTypes.equipment.find(t => t.uuid === a.source)?.isInvested);
@@ -466,7 +464,7 @@ Hooks.once("init", () => {
     })
 });
 
-Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
+Hooks.on('pf2e.startTurn', async (combatant) => {
     if (!game.settings.get(moduleName, "eidolonCondition")) {
         return
     }
@@ -497,7 +495,7 @@ Hooks.on('pf2e.startTurn', async (combatant, encounter, user_id) => {
     }
 })
 
-Hooks.on('pf2e.endTurn', async (combatant, encounter, user_id) => {
+Hooks.on('pf2e.endTurn', async (combatant) => {
     if (!game.settings.get(moduleName, "eidolonCondition")) {
         return
     }
@@ -526,13 +524,6 @@ function isSummoner(actor) {
     return "character" === actor?.type && ("summoner" === actor?.class?.slug || actor.itemTypes.feat.find(a => a.slug === 'summoner-dedication'))
 }
 
-async function dismissEidolon(actorId) {
-    game.scenes.current.tokens.filter(a => a?.actor?.id === actorId)
-        .forEach(t => {
-            window?.warpgate?.dismiss(t.id)
-        });
-}
-
 const eidolonTraditionSkill = {
     'angel-eidolon': 'religion',
     'anger-phantom-eidolon': 'occultism',
@@ -548,7 +539,7 @@ const eidolonTraditionSkill = {
     'undead-eidolon': 'religion',
 }
 
-Hooks.on('preCreateChatMessage', async (message, user, _options, userId) => {
+Hooks.on('preCreateChatMessage', async (message, user, _options) => {
     if (!message?.flags?.pf2e?.origin?.type) {
         return;
     }
@@ -622,7 +613,7 @@ Hooks.on('preUpdateActor', (actor, updates) => {
     }
 });
 
-Hooks.on('updateActor', (actor, updates, _options, id) => {
+Hooks.on('updateActor', (actor, updates, _options) => {
     if (!game.settings.get(moduleName, "sharedHP")) {
         return
     }
@@ -652,7 +643,7 @@ Hooks.on('preUpdateActor', (actor, updates) => {
     }
 });
 
-Hooks.on('updateActor', (actor, updates, _options, id) => {
+Hooks.on('updateActor', (actor, updates, _options) => {
     if (!game.settings.get(moduleName, "sharedHero")) {
         return
     }
