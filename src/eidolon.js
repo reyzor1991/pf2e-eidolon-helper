@@ -72,47 +72,6 @@ async function setSummonerHP(actor) {
     }
 }
 
-Hooks.on("preCreateItem", (item, data) => {
-    if ("condition" === data.type && data.system.slug === "drained") {
-        if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
-            let summoner = game.actors.get(item.actor?.getFlag(moduleName, 'summoner'))
-            if (summoner) {
-                addDrainedToSummoner(summoner, data);
-                return false;
-            }
-        }
-    }
-});
-
-Hooks.on("preCreateItem", async (item, data) => {
-    if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
-        if ("condition" === data.type && item.actor?.system?.attributes?.hp?.value === 0) {
-            if ("dying" === item.slug) {
-                const summonerId = item.actor.getFlag(moduleName, 'summoner')
-                if (summonerId) {
-                    const summoner = game.actors.get(summonerId);
-                    summoner.increaseCondition('dying')
-                }
-            }
-        }
-    }
-});
-
-Hooks.on("preCreateItem", (item, data) => {
-    if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
-        if ("condition" === data.type && item.actor?.system?.attributes?.hp?.value === 0) {
-            return false;
-        }
-    }
-});
-
-async function addDrainedToSummoner(summoner, data) {
-    const sumDrained = summoner.hasCondition(data.system.slug)
-    if (!sumDrained) {
-        await summoner.createEmbeddedDocuments("Item", [data]);
-    }
-}
-
 async function extendBoost(actor) {
     if (!actor) {
         ui.notifications.info(`Need to select Actor`);
@@ -178,7 +137,9 @@ async function extendBoost(actor) {
         skipDialog: true
     })).degreeOfSuccess;
 
-    const spellUuid = spell === 0 ? 'Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW' : 'Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF';
+    const spellUuid = spell === 0
+        ? 'Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW'
+        : 'Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF';
 
     let spellObj = (await fromUuid(spellUuid)).toObject();
     spellObj.system.duration.unit = "rounds";
@@ -190,10 +151,10 @@ async function extendBoost(actor) {
     }
 
     if (degreeOfSuccess === 3 || degreeOfSuccess === 2) {
-        await actor.update({"system.resources.focus.value": actor.system.resources.focus.value - 1})
+        actor.update({"system.resources.focus.value": actor.system.resources.focus.value - 1})
     }
 
-    await target.createEmbeddedDocuments("Item", [spellObj]);
+    target.createEmbeddedDocuments("Item", [spellObj]);
 }
 
 const DECREASE_SIZE = {
@@ -227,7 +188,7 @@ async function shrinkDown(actor) {
         return
     }
 
-    let newSize = undefined
+    let newSize;
     if (dSizes.length === 1) {
         newSize = dSizes[0].value;
     } else {
@@ -299,6 +260,65 @@ const weaponData = function (wrapped) {
     wrapped();
 
 };
+
+function isSummoner(actor) {
+    return "character" === actor?.type && ("summoner" === actor?.class?.slug || actor.itemTypes.feat.find(a => a.slug === 'summoner-dedication'))
+}
+
+const eidolonTraditionSkill = {
+    'angel-eidolon': 'religion',
+    'anger-phantom-eidolon': 'occultism',
+    'beast-eidolon': 'nature',
+    'construct-eidolon': 'arcana',
+    'demon-eidolon': 'religion',
+    'devotion-phantom-eidolon': 'occultism',
+    'dragon-eidolon': 'arcana',
+    'elemental-eidolon': 'nature',
+    'fey-eidolon': 'nature',
+    'plant-eidolon': 'nature',
+    'psychopomp-eidolon': 'religion',
+    'undead-eidolon': 'religion',
+}
+
+async function setEffectToActor(actor, effUuid) {
+    let source = await fromUuid(effUuid)
+    source = source.toObject();
+    source._stats ??= {}
+    source._stats.compendiumSource = effUuid;
+    actor.createEmbeddedDocuments("Item", [source]);
+}
+
+function actorPrepareData(wrapped) {
+    wrapped()
+    if (!game.ready) return;
+
+    const actor = this
+    const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
+    const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
+
+    if (eidolon) {
+        eidolon.reset();
+        eidolon.sheet?.render();
+    }
+
+    if (game.settings.get(moduleName, "sharedHP") && summoner) {
+        Object.defineProperty(actor.system.attributes, 'hp', {
+            get() {
+                return foundry.utils.deepClone(summoner.system.attributes.hp)
+            },
+            enumerable: true,
+        })
+    }
+
+    if (game.settings.get(moduleName, "sharedHero") && summoner) {
+        Object.defineProperty(actor.system.resources, 'heroPoints', {
+            get() {
+                return foundry.utils.deepClone(summoner.system.resources.heroPoints)
+            },
+            enumerable: true,
+        })
+    }
+}
 
 Hooks.once("init", () => {
 
@@ -464,142 +484,6 @@ Hooks.once("init", () => {
     })
 });
 
-Hooks.on('pf2e.startTurn', async (combatant) => {
-    if (!game.settings.get(moduleName, "eidolonCondition")) {
-        return
-    }
-    const actor = combatant.actor;
-    if (isSummoner(actor)) {
-        let ei = actor.getFlag(moduleName, "eidolon");
-        if (ei) {
-            ei = game.actors.get(ei);
-
-            const stunned = ei.getCondition("stunned") ?? ei.getCondition("slowed");
-            if (stunned && !stunned.isLocked) {
-                const actionCount = (3 + (ei.hasCondition("quickened") ? 1 : 0));
-                let lastAction = 0;
-                if (actionCount >= stunned.value) {
-                    ei.decreaseCondition(ei.getCondition("stunned") ? "stunned" : "slowed", {forceRemove: true})
-                    lastAction = actionCount - stunned.value;
-                } else {
-                    await game.pf2e.ConditionManager.updateConditionValue(stunned.id, ei, stunned.value - actionCount)
-                }
-                ui.notifications.info(`${ei.name} has only ${lastAction} action${lastAction <= 1 ? "" : "s"}`);
-            }
-
-            for (const effect of ei.itemTypes.effect) {
-                await effect.onTurnStartEnd('start');
-                effect.prepareBaseData();
-            }
-        }
-    }
-})
-
-Hooks.on('pf2e.endTurn', async (combatant) => {
-    if (!game.settings.get(moduleName, "eidolonCondition")) {
-        return
-    }
-    const actor = combatant.actor;
-    if (isSummoner(actor)) {
-        let ei = actor.getFlag(moduleName, "eidolon");
-        if (ei) {
-            ei = game.actors.get(ei);
-            const frightened = ei.getCondition("frightened")
-            if (frightened && !frightened.isLocked) {
-                await ei.decreaseCondition("frightened");
-            }
-            const token = game.canvas.scene.tokens.find(a => a.actorId === ei.id);
-            for (const condition of ei.conditions.active) {
-                await condition.onEndTurn({token});
-            }
-            for (const effect of ei.itemTypes.effect) {
-                await effect.onTurnStartEnd('end');
-                effect.prepareBaseData();
-            }
-        }
-    }
-});
-
-function isSummoner(actor) {
-    return "character" === actor?.type && ("summoner" === actor?.class?.slug || actor.itemTypes.feat.find(a => a.slug === 'summoner-dedication'))
-}
-
-const eidolonTraditionSkill = {
-    'angel-eidolon': 'religion',
-    'anger-phantom-eidolon': 'occultism',
-    'beast-eidolon': 'nature',
-    'construct-eidolon': 'arcana',
-    'demon-eidolon': 'religion',
-    'devotion-phantom-eidolon': 'occultism',
-    'dragon-eidolon': 'arcana',
-    'elemental-eidolon': 'nature',
-    'fey-eidolon': 'nature',
-    'plant-eidolon': 'nature',
-    'psychopomp-eidolon': 'religion',
-    'undead-eidolon': 'religion',
-}
-
-Hooks.on('preCreateChatMessage', async (message, user, _options) => {
-    if (!message?.flags?.pf2e?.origin?.type) {
-        return;
-    }
-    if (!messageType(message, undefined) && !messageType(message, "spell-cast")) {
-        return
-    }
-    const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid));
-
-    const ei = game.actors.get(message.actor.getFlag(moduleName, "eidolon"));
-    if (!ei) {
-        return
-    }
-    if (!game.modules.get("pf2e-action-support-engine")?.active) {
-        if (_obj?.slug === "boost-eidolon") {
-            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
-        } else if (_obj?.slug === "reinforce-eidolon") {
-            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
-        }
-    }
-});
-
-async function setEffectToActor(actor, effUuid) {
-    let source = await fromUuid(effUuid)
-    source = source.toObject();
-    source.flags = foundry.utils.mergeObject(source.flags ?? {}, {core: {sourceId: effUuid}});
-    await actor.createEmbeddedDocuments("Item", [source]);
-}
-
-function actorPrepareData(wrapped) {
-    wrapped()
-    if (!game.ready) return;
-
-    const actor = this
-    const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
-    const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
-
-    if (eidolon) {
-        eidolon.reset();
-        eidolon.sheet?.render();
-    }
-
-    if (game.settings.get(moduleName, "sharedHP") && summoner) {
-        Object.defineProperty(actor.system.attributes, 'hp', {
-            get() {
-                return foundry.utils.deepClone(summoner.system.attributes.hp)
-            },
-            enumerable: true,
-        })
-    }
-
-    if (game.settings.get(moduleName, "sharedHero") && summoner) {
-        Object.defineProperty(actor.system.resources, 'heroPoints', {
-            get() {
-                return foundry.utils.deepClone(summoner.system.resources.heroPoints)
-            },
-            enumerable: true,
-        })
-    }
-}
-
 Hooks.on('preUpdateActor', (actor, updates) => {
     if (!game.settings.get(moduleName, "sharedHP")) {
         return
@@ -610,6 +494,19 @@ Hooks.on('preUpdateActor', (actor, updates) => {
     if (summoner && hpUpdate) {
         summoner.update({'system.attributes.hp': hpUpdate}, {noHook: true})
         delete updates.system.attributes.hp
+    }
+});
+
+Hooks.on('preUpdateActor', (actor, updates) => {
+    if (!game.settings.get(moduleName, "sharedHero")) {
+        return
+    }
+
+    const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
+    const hpUpdate = updates?.system?.resources?.heroPoints
+    if (summoner && hpUpdate) {
+        summoner.update({'system.resources.heroPoints': hpUpdate}, {noHook: true})
+        delete updates.system.resources.heroPoints
     }
 });
 
@@ -627,19 +524,6 @@ Hooks.on('updateActor', (actor, updates, _options) => {
             const data = {'system.attributes.hp': updates.system.attributes.hp}
             eidolon.update(data, {noHook: true})
         }
-    }
-});
-
-Hooks.on('preUpdateActor', (actor, updates) => {
-    if (!game.settings.get(moduleName, "sharedHero")) {
-        return
-    }
-
-    const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
-    const hpUpdate = updates?.system?.resources?.heroPoints
-    if (summoner && hpUpdate) {
-        summoner.update({'system.resources.heroPoints': hpUpdate}, {noHook: true})
-        delete updates.system.resources.heroPoints
     }
 });
 
@@ -713,6 +597,121 @@ Hooks.on("deleteItem", (item) => {
         let summoner = game.actors.get(item.actor.getFlag(moduleName, "summoner"));
         if (summoner) {
             summoner.decreaseCondition("drained", {forceRemove: true})
+        }
+    }
+});
+
+Hooks.on('preCreateChatMessage', async (message, user, _options) => {
+    if (!message?.flags?.pf2e?.origin?.type) {
+        return;
+    }
+    if (!messageType(message, undefined) && !messageType(message, "spell-cast")) {
+        return
+    }
+    const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid));
+
+    const ei = game.actors.get(message.actor.getFlag(moduleName, "eidolon"));
+    if (!ei) {
+        return
+    }
+    if (!game.modules.get("pf2e-action-support-engine")?.active) {
+        if (_obj?.slug === "boost-eidolon") {
+            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
+        } else if (_obj?.slug === "reinforce-eidolon") {
+            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
+        }
+    }
+});
+
+Hooks.on('pf2e.startTurn', async (combatant) => {
+    if (!game.settings.get(moduleName, "eidolonCondition")) {
+        return
+    }
+    const actor = combatant.actor;
+    if (isSummoner(actor)) {
+        let ei = actor.getFlag(moduleName, "eidolon");
+        if (ei) {
+            ei = game.actors.get(ei);
+
+            const stunned = ei.getCondition("stunned") ?? ei.getCondition("slowed");
+            if (stunned && !stunned.isLocked) {
+                const actionCount = (3 + (ei.hasCondition("quickened") ? 1 : 0));
+                let lastAction = 0;
+                if (actionCount >= stunned.value) {
+                    ei.decreaseCondition(ei.getCondition("stunned") ? "stunned" : "slowed", {forceRemove: true})
+                    lastAction = actionCount - stunned.value;
+                } else {
+                    await game.pf2e.ConditionManager.updateConditionValue(stunned.id, ei, stunned.value - actionCount)
+                }
+                ui.notifications.info(`${ei.name} has only ${lastAction} action${lastAction <= 1 ? "" : "s"}`);
+            }
+
+            for (const effect of ei.itemTypes.effect) {
+                await effect.onTurnStartEnd('start');
+                effect.prepareBaseData();
+            }
+        }
+    }
+})
+
+Hooks.on('pf2e.endTurn', async (combatant) => {
+    if (!game.settings.get(moduleName, "eidolonCondition")) {
+        return
+    }
+    const actor = combatant.actor;
+    if (isSummoner(actor)) {
+        let ei = actor.getFlag(moduleName, "eidolon");
+        if (ei) {
+            ei = game.actors.get(ei);
+            const frightened = ei.getCondition("frightened")
+            if (frightened && !frightened.isLocked) {
+                await ei.decreaseCondition("frightened");
+            }
+            const token = game.canvas.scene.tokens.find(a => a.actorId === ei.id);
+            for (const condition of ei.conditions.active) {
+                await condition.onEndTurn({token});
+            }
+            for (const effect of ei.itemTypes.effect) {
+                await effect.onTurnStartEnd('end');
+                effect.prepareBaseData();
+            }
+        }
+    }
+});
+
+Hooks.on("preCreateItem", (item, data) => {
+    if ("condition" === data.type && data.system.slug === "drained") {
+        if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
+            let summoner = game.actors.get(item.actor?.getFlag(moduleName, 'summoner'))
+            if (summoner) {
+                const sumDrained = summoner.hasCondition(data.system.slug)
+                if (!sumDrained) {
+                    summoner.createEmbeddedDocuments("Item", [data]);
+                }
+                return false;
+            }
+        }
+    }
+});
+
+Hooks.on("preCreateItem", (item, data) => {
+    if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
+        if ("condition" === data.type && item.actor?.system?.attributes?.hp?.value === 0) {
+            return false;
+        }
+    }
+});
+
+Hooks.on("preCreateItem", async (item, data) => {
+    if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
+        if ("condition" === data.type && item.actor?.system?.attributes?.hp?.value === 0) {
+            if ("dying" === item.slug) {
+                const summonerId = item.actor.getFlag(moduleName, 'summoner')
+                if (summonerId) {
+                    const summoner = game.actors.get(summonerId);
+                    summoner.increaseCondition('dying')
+                }
+            }
         }
     }
 });
