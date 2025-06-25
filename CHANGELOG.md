@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.2
+- Fix source link for Shrink Down
+
 ## Version 0.2.1
 - small optimization for v13
 

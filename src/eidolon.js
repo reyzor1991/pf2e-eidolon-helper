@@ -214,12 +214,14 @@ async function shrinkDown(actor) {
         return
     }
 
-    let item = await fromUuid('Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF');
+    let effUuid = 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF';
+    let item = await fromUuid(effUuid);
     item = item?.toObject();
     if (!item) {
         return
     }
-    item.flags = foundry.utils.mergeObject(item.flags ?? {}, {core: {sourceId: 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF'}});
+    item._stats ??= {}
+    item._stats.compendiumSource = effUuid;
     item.system.rules[0].value = newSize;
 
     actor.createEmbeddedDocuments("Item", [item]);
