@@ -1,0 +1,43 @@
+{
+  "_id": "XMiNue3IsKi5kuoF",
+  "img": "icons/commodities/materials/slime-thick-blue.webp",
+  "name": "Effect: Shrink Down",
+  "system": {
+    "description": {
+      "value": ""
+    },
+    "duration": {
+      "expiry": "turn-end",
+      "sustained": false,
+      "unit": "unlimited",
+      "value": -1
+    },
+    "level": {
+      "value": 1
+    },
+    "rules": [
+      {
+        "key": "CreatureSize",
+        "value": "small"
+      }
+    ],
+    "source": {
+      "value": ""
+    },
+    "start": {
+      "initiative": null,
+      "value": 0
+    },
+    "target": null,
+    "tokenIcon": {
+      "show": true
+    },
+    "traits": {
+      "rarity": "common",
+      "value": []
+    },
+    "slug": "effect-shrink-down"
+  },
+  "type": "effect",
+  "_key": "!items!XMiNue3IsKi5kuoF"
+}

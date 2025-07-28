@@ -1,0 +1,13 @@
+{
+  "_id": "vNuRJL3VLe3vUrTa",
+  "author": "E9zWf1a6ounUt7Ro",
+  "command": "game.pf2eeidolonhelper.shrinkDown(actor);",
+  "img": "icons/commodities/materials/slime-thick-blue.webp",
+  "name": "Shrink Down",
+  "ownership": {
+    "default": 1
+  },
+  "scope": "global",
+  "type": "script",
+  "_key": "!macros!vNuRJL3VLe3vUrTa"
+}

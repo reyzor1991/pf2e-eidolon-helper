@@ -1,0 +1,50 @@
+{
+  "_id": "4HfdagPN5nq5BBDV",
+  "img": "systems/pf2e/icons/conditions/drained.webp",
+  "name": "Drained Eidolon",
+  "system": {
+    "description": {
+      "value": ""
+    },
+    "duration": {
+      "expiry": "turn-start",
+      "sustained": false,
+      "unit": "unlimited",
+      "value": -1
+    },
+    "level": {
+      "value": 1
+    },
+    "rules": [
+      {
+        "key": "FlatModifier",
+        "label": "Drained",
+        "selector": "con-based",
+        "value": "-@item.badge.value",
+        "type": "status"
+      }
+    ],
+    "source": {
+      "value": ""
+    },
+    "start": {
+      "initiative": null,
+      "value": 0
+    },
+    "target": null,
+    "tokenIcon": {
+      "show": true
+    },
+    "traits": {
+      "rarity": "common",
+      "value": []
+    },
+    "badge": {
+      "type": "counter",
+      "value": 1
+    },
+    "slug": "drained-eidolon"
+  },
+  "type": "effect",
+  "_key": "!items!4HfdagPN5nq5BBDV"
+}

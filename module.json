@@ -2,7 +2,7 @@
   "id": "pf2e-eidolon-helper",
   "title": "PF2e Eidolon Helper",
   "description": "PF2e Eidolon Helper",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "authors": [
     {
       "name": "Reyzor",
@@ -12,7 +12,7 @@
   ],
   "languages": [],
   "esmodules": [
-    "pf2e-eidolon-helper.js"
+    "src/eidolon.js"
   ],
   "styles": [
   ],
@@ -25,16 +25,16 @@
         "ASSISTANT": "OWNER"
       },
       "packs": [
-        "pf2e-eidolon-helper",
+        "pf2e-eidolon-helper-effects",
         "pf2e-eidolon-helper-macros"
       ]
     }
   ],
   "packs": [
     {
-      "label": "PF2e Eidolon Helper",
-      "name": "pf2e-eidolon-helper",
-      "path": "packs/pf2e-eidolon-helper.db",
+      "label": "PF2e Eidolon Helper Effects",
+      "name": "pf2e-eidolon-helper-effects",
+      "path": "packs/pf2e-eidolon-helper-effects",
       "system": "pf2e",
       "private": false,
       "type": "Item",
@@ -43,7 +43,7 @@
     {
       "label": "PF2e Eidolon Helper Macros",
       "name": "pf2e-eidolon-helper-macros",
-      "path": "packs/pf2e-eidolon-helper-macros.db",
+      "path": "packs/pf2e-eidolon-helper-macros",
       "system": "pf2e",
       "private": false,
       "type": "Macro",

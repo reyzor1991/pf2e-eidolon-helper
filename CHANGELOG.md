@@ -1,7 +1,10 @@
 # Changelog
 
-## Version 0.2.2
-- Fix source link for Shrink Down
+## Version 0.2.4
+- LevelDB migration
+
+## Version 0.2.3
+- update readme
 
 ## Version 0.2.1
 - small optimization for v13
