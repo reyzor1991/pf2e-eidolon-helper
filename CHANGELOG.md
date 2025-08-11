@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.5
+- Fix handling eidolon conditions
+
 ## Version 0.2.4
 - LevelDB migration
 

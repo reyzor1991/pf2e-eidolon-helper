@@ -631,10 +631,8 @@ Hooks.on('pf2e.startTurn', async (combatant) => {
     }
     const actor = combatant.actor;
     if (isSummoner(actor)) {
-        let ei = actor.getFlag(moduleName, "eidolon");
+        let ei = game.actors.get(actor.getFlag(moduleName, "eidolon"));
         if (ei) {
-            ei = game.actors.get(ei);
-
             const stunned = ei.getCondition("stunned") ?? ei.getCondition("slowed");
             if (stunned && !stunned.isLocked) {
                 const actionCount = (3 + (ei.hasCondition("quickened") ? 1 : 0));
@@ -662,9 +660,8 @@ Hooks.on('pf2e.endTurn', async (combatant) => {
     }
     const actor = combatant.actor;
     if (isSummoner(actor)) {
-        let ei = actor.getFlag(moduleName, "eidolon");
+        let ei = game.actors.get(actor.getFlag(moduleName, "eidolon"));
         if (ei) {
-            ei = game.actors.get(ei);
             const frightened = ei.getCondition("frightened")
             if (frightened && !frightened.isLocked) {
                 await ei.decreaseCondition("frightened");
@@ -708,9 +705,8 @@ Hooks.on("preCreateItem", async (item, data) => {
     if ("character" === item.actor?.type && "eidolon" === item.actor?.class?.slug) {
         if ("condition" === data.type && item.actor?.system?.attributes?.hp?.value === 0) {
             if ("dying" === item.slug) {
-                const summonerId = item.actor.getFlag(moduleName, 'summoner')
-                if (summonerId) {
-                    const summoner = game.actors.get(summonerId);
+                const summoner = game.actors.get(item.actor.getFlag(moduleName, 'summoner'))
+                if (summoner) {
                     summoner.increaseCondition('dying')
                 }
             }
