@@ -430,13 +430,24 @@ Hooks.once("init", () => {
 
             let acSlugs = ['bracers-of-armor']
             let savingSlugs = ['bracers-of-armor', 'resilient']
-            if (summoner.wornArmor?.slug) {
-                acSlugs.push(summoner.wornArmor.slug)
+
+            const mm = (this.synthetics.modifiers['ac'] ??= []);
+
+            if (summoner.wornArmor?.system?.runes?.potency) {
+                mm.push((options) => {
+                    let modi = new game.pf2e.Modifier({
+                        slug: summoner.wornArmor.slug,
+                        label: summoner.wornArmor.name,
+                        modifier: summoner.wornArmor?.system?.runes?.potency,
+                        type: 'item',
+                    })
+                    if (options.test) modi.test(options.test);
+                    return modi;
+                });
             }
 
             let bracersArmorM = summoner.system.attributes.ac.modifiers.filter(m => acSlugs.includes(m.slug));
             if (bracersArmorM.length) {
-                const mm = (this.synthetics.modifiers['ac'] ??= []);
 
                 for (const m of bracersArmorM) {
                     mm.push((options) => {

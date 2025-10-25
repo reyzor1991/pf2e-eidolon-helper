@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.6
+- Fix AC sharing
+
 ## Version 0.2.5
 - Fix handling eidolon conditions
 
