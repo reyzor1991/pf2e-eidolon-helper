@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.7
+- Add language sharing
+
 ## Version 0.2.6
 - Fix AC sharing
 

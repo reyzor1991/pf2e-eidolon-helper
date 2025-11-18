@@ -320,6 +320,15 @@ function actorPrepareData(wrapped) {
             enumerable: true,
         })
     }
+
+    if (game.settings.get(moduleName, "sharedLanguage") && summoner) {
+        Object.defineProperty(actor.system.details, 'languages', {
+            get() {
+                return foundry.utils.deepClone(summoner.system.details.languages)
+            },
+            enumerable: true,
+        })
+    }
 }
 
 Hooks.once("init", () => {
@@ -335,6 +344,14 @@ Hooks.once("init", () => {
     });
     game.settings.register(moduleName, "sharedHero", {
         name: "Share Hero Points between Summoner and Eidolon",
+        scope: "world",
+        requiresReload: true,
+        config: true,
+        default: false,
+        type: Boolean,
+    });
+    game.settings.register(moduleName, "sharedLanguage", {
+        name: "Eidolon has same languages as Summoner",
         scope: "world",
         requiresReload: true,
         config: true,
@@ -552,6 +569,23 @@ Hooks.on('updateActor', (actor, updates, _options) => {
     if (eidolon) {
         if (updates?.system?.resources?.heroPoints) {
             const data = {'system.resources.heroPoints': updates.system.resources.heroPoints}
+            eidolon.update(data, {noHook: true})
+        }
+    }
+});
+
+Hooks.on('updateActor', (actor, updates, _options) => {
+    if (!game.settings.get(moduleName, "sharedLanguage")) {
+        return
+    }
+    if (game.user !== game.users.activeGM) {
+        return
+    }
+
+    const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
+    if (eidolon) {
+        if (updates?.system?.details?.languages) {
+            const data = {'system.details.languages': updates.system.details.languages}
             eidolon.update(data, {noHook: true})
         }
     }
