@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.8
+- Delete eidolon token when 0 hp
+
 ## Version 0.2.7
 - Add language sharing
 

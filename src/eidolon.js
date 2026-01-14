@@ -522,10 +522,21 @@ Hooks.on('preUpdateActor', (actor, updates) => {
     const summoner = game.actors.get(actor.getFlag(moduleName, "summoner"))
     const hpUpdate = updates?.system?.attributes?.hp
     if (summoner && hpUpdate) {
+        if (hpUpdate?.value === 0) {
+            dismissEidolon(actor.id);
+        }
+
         summoner.update({'system.attributes.hp': hpUpdate}, {noHook: true})
         delete updates.system.attributes.hp
     }
 });
+
+async function dismissEidolon(actorId) {
+    game.scenes.current.tokens.filter(a => a?.actor?.id === actorId)
+        .forEach(t => {
+            t.delete()
+        });
+}
 
 Hooks.on('preUpdateActor', (actor, updates) => {
     if (!game.settings.get(moduleName, "sharedHero")) {
@@ -551,6 +562,10 @@ Hooks.on('updateActor', (actor, updates, _options) => {
     const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
     if (eidolon) {
         if (updates?.system?.attributes?.hp) {
+            if (updates?.system?.attributes?.hp?.value === 0) {
+                dismissEidolon(eidolon.id);
+            }
+
             const data = {'system.attributes.hp': updates.system.attributes.hp}
             eidolon.update(data, {noHook: true})
         }
