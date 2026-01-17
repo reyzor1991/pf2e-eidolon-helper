@@ -676,11 +676,19 @@ Hooks.on('preCreateChatMessage', async (message, user, _options) => {
     if (!ei) {
         return
     }
-    if (!game.modules.get("pf2e-action-support-engine")?.active) {
+    if (!game.modules.get("pf2e-action-support-engine")?.active
+        && !game.modules.get("patreon-v3")?.active
+    ) {
         if (_obj?.slug === "boost-eidolon") {
             setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.h0CKGrgjGNSg21BW")
         } else if (_obj?.slug === "reinforce-eidolon") {
-            setEffectToActor(ei, "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
+            let source = await fromUuid("Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF")
+            source = source.toObject();
+            source._stats ??= {}
+            source._stats.compendiumSource = "Compendium.pf2e.spell-effects.Item.UVrEe0nukiSmiwfF";
+            source.system.level = {value: message?.item?.level ?? 1};
+
+            ei.createEmbeddedDocuments("Item", [source]);
         }
     }
 });

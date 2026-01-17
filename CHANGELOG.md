@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.9
+- Fix reinforce eidolon lvl
+
 ## Version 0.2.8
 - Delete eidolon token when 0 hp
 
