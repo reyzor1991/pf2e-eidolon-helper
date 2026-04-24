@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.10
+- last v13
+
 ## Version 0.2.9
 - Fix reinforce eidolon lvl
 
