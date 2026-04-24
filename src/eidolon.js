@@ -726,7 +726,10 @@ Hooks.on('pf2e.endTurn', async (combatant) => {
     if (!game.settings.get(moduleName, "eidolonCondition")) {
         return
     }
-    const actor = combatant.actor;
+    const actor = combatant?.actor;
+    if (!actor) {
+        return
+    }
     if (isSummoner(actor)) {
         let ei = game.actors.get(actor.getFlag(moduleName, "eidolon"));
         if (ei) {
