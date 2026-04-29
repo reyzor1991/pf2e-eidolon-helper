@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.2
+- sf2e adaptations
+
 ## Version 0.3.1
 - add spf2e support for anachronism 
 

@@ -31,7 +31,8 @@ const dcByLevel = new Map([
 ]);
 
 function messageType(message, type) {
-    return type === message?.flags?.pf2e?.context?.type;
+    return type === message?.flags?.pf2e?.context?.type
+        || type === message?.flags?.sf2e?.context?.type;
 }
 
 function hasEffect(actor, eff) {
@@ -214,16 +215,12 @@ async function shrinkDown(actor) {
         return
     }
 
-    let effUuid = 'Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.XMiNue3IsKi5kuoF';
-    let item = await fromUuid(effUuid);
-    item = item?.toObject();
+    let item = (await fromUuid('Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper-effects.Item.XMiNue3IsKi5kuoF')
+        || await fromUuid('Compendium.pf2e-eidolon-helper.sf2e-eidolon-helper-effects.Item.XMiNue3IsKi5kuoF')
+    )?.toObject();
     if (!item) {
         return
     }
-    item._stats ??= {}
-    item._stats.compendiumSource = effUuid;
-    item.system.rules[0].value = newSize;
-
     actor.createEmbeddedDocuments("Item", [item]);
 }
 
@@ -634,7 +631,10 @@ Hooks.on("createItem", async (item) => {
             if (eidolon) {
                 let eff = hasEffect(eidolon, "drained-eidolon");
                 if (!eff) {
-                    eff = (await fromUuid("Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper.Item.4HfdagPN5nq5BBDV")).toObject();
+                    eff = (
+                        await fromUuid("Compendium.pf2e-eidolon-helper.pf2e-eidolon-helper-effects.Item.4HfdagPN5nq5BBDV")
+                        || await fromUuid("Compendium.pf2e-eidolon-helper.sf2e-eidolon-helper-effects.Item.4HfdagPN5nq5BBDV")
+                    ).toObject();
                     eidolon.createEmbeddedDocuments("Item", [eff]);
                 }
                 eidolon.render(false, {action: 'update'})
@@ -664,13 +664,14 @@ Hooks.on("deleteItem", (item) => {
 });
 
 Hooks.on('preCreateChatMessage', async (message, user, _options) => {
-    if (!message?.flags?.pf2e?.origin?.type) {
+    if (!message?.flags?.pf2e?.origin?.type
+        && !message?.flags?.sf2e?.origin?.type) {
         return;
     }
     if (!messageType(message, undefined) && !messageType(message, "spell-cast")) {
         return
     }
-    const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid));
+    const _obj = message.item ?? (await fromUuid(message?.flags?.pf2e?.origin?.uuid || message?.flags?.sf2e?.origin?.uuid));
 
     const ei = game.actors.get(message.actor.getFlag(moduleName, "eidolon"));
     if (!ei) {
