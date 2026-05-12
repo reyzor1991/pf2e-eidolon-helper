@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.3
+- Fix Shrink Down
+
 ## Version 0.3.2
 - sf2e adaptations
 

@@ -221,6 +221,9 @@ async function shrinkDown(actor) {
     if (!item) {
         return
     }
+
+    item.system.rules[0].value = newSize
+
     actor.createEmbeddedDocuments("Item", [item]);
 }
 
