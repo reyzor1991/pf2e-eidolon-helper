@@ -252,6 +252,9 @@ const weaponData = function (wrapped) {
         const summoner = game.actors.get(this.actor.getFlag(moduleName, 'summoner'));
         if (summoner) {
             let weapon = summoner.itemTypes.weapon.find(w => w.slug === "handwraps-of-mighty-blows" && w.isInvested)
+            if (!weapon) {
+                weapon = summoner.itemTypes.weapon.find(w => w.isInvested);
+            }
             if (weapon) {
                 this.system.runes.potency = weapon.system.runes.potency;
                 this.system.runes.striking = weapon.system.runes.striking;

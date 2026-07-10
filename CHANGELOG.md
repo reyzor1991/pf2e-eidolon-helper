@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.4
+- Handle invested summoner weapon runes if 
+
 ## Version 0.3.3
 - Fix Shrink Down
 
