@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.5
+- Add Impossible Magic Extend Boost
+
 ## Version 0.3.4
 - Handle invested summoner weapon runes if 
 

@@ -133,7 +133,11 @@ async function extendBoost(actor) {
         return;
     }
 
-    const degreeOfSuccess = (await actor.skills[eidolonTraditionSkill[target.ancestry.slug] ?? 'arcana'].roll({
+    let skill = "dragon-eidolon" === target.ancestry.slug
+        ? (target.ancestry?.flags?.pf2e?.rulesSelections?.dragonTradition?.skill ?? 'arcana')
+        : (eidolonTraditionSkill[target.ancestry.slug] ?? 'arcana')
+
+    const degreeOfSuccess = (await actor.skills[skill].roll({
         dc: {value: dc},
         skipDialog: true
     })).degreeOfSuccess;
@@ -273,11 +277,13 @@ function isSummoner(actor) {
 const eidolonTraditionSkill = {
     'angel-eidolon': 'religion',
     'anger-phantom-eidolon': 'occultism',
+    'aberrant-eidolon': 'occultism',
     'beast-eidolon': 'nature',
     'construct-eidolon': 'arcana',
     'demon-eidolon': 'religion',
     'devotion-phantom-eidolon': 'occultism',
     'dragon-eidolon': 'arcana',
+    'ooze-eidolon': 'arcana',
     'elemental-eidolon': 'nature',
     'fey-eidolon': 'nature',
     'plant-eidolon': 'nature',
@@ -483,23 +489,26 @@ Hooks.once("init", () => {
                 }
             }
 
-            let savingMods = summoner.saves.fortitude.modifiers.filter(m => savingSlugs.includes(m.slug))
-            if (savingMods.length) {
-                const mmm = (this.synthetics.modifiers['saving-throw'] ??= []);
+            if (summoner?.saves?.fortitude?.modifiers) {
+                let savingMods = summoner.saves.fortitude.modifiers.filter(m => savingSlugs.includes(m.slug))
+                if (savingMods.length) {
+                    const mmm = (this.synthetics.modifiers['saving-throw'] ??= []);
 
-                for (const m of savingMods) {
-                    mmm.push((options) => {
-                        let modi = new game.pf2e.Modifier({
-                            slug: m.slug,
-                            label: m.label,
-                            modifier: m.modifier,
-                            type: m.type,
-                        })
-                        if (options.test) modi.test(options.test);
-                        return modi;
-                    });
+                    for (const m of savingMods) {
+                        mmm.push((options) => {
+                            let modi = new game.pf2e.Modifier({
+                                slug: m.slug,
+                                label: m.label,
+                                modifier: m.modifier,
+                                type: m.type,
+                            })
+                            if (options.test) modi.test(options.test);
+                            return modi;
+                        });
+                    }
                 }
             }
+
 
             originPrepareDerivedData.call(this);
         }
