@@ -259,10 +259,16 @@ const weaponData = function (wrapped) {
             if (!weapon) {
                 weapon = summoner.itemTypes.weapon.find(w => w.isInvested);
             }
-            if (weapon) {
-                this.system.runes.potency = weapon.system.runes.potency;
-                this.system.runes.striking = weapon.system.runes.striking;
-                this.system.runes.property = weapon.system.runes.property.slice();
+            if (weapon && weapon.system.runes) {
+                if (weapon.system.runes.potency) {
+                    this.system.runes.potency = weapon.system.runes.potency;
+                }
+                if (weapon.system.runes.striking) {
+                    this.system.runes.striking = weapon.system.runes.striking;
+                }
+                if (weapon.system.runes.property && Array.isArray(weapon.system.runes.property)) {
+                    this.system.runes.property = weapon.system.runes.property;
+                }
             }
         }
     }
