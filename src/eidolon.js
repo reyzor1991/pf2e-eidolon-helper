@@ -458,6 +458,8 @@ Hooks.once("init", () => {
             const summoner = game.actors.get(this.getFlag(moduleName, 'summoner'));
             if (!summoner) {
                 return originPrepareDerivedData.call(this);
+            } else if (summoner.getFlag(moduleName, 'eidolon')) {
+                summoner.prepareDerivedData()
             }
 
             let acSlugs = ['bracers-of-armor']
@@ -514,7 +516,6 @@ Hooks.once("init", () => {
                     }
                 }
             }
-
 
             originPrepareDerivedData.call(this);
         }

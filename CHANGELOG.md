@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.7
+- Fix invested summoner weapon runes
+
 ## Version 0.3.6
 - Handle invested summoner weapon runes
 
