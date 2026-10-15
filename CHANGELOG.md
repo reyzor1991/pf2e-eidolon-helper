@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.8
+- Fix compatibility
+
 ## Version 0.3.7
 - Fix invested summoner weapon runes
 

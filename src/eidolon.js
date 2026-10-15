@@ -314,7 +314,11 @@ function actorPrepareData(wrapped) {
     const eidolon = game.actors.get(actor.getFlag(moduleName, "eidolon"))
 
     if (eidolon) {
-        eidolon.reset();
+        try {
+            eidolon.reset();
+        } catch (e) {
+            console.warn(`${moduleName} | Failed to reset eidolon`, e);
+        }
         eidolon.sheet?.render();
     }
 
@@ -450,80 +454,61 @@ Hooks.once("init", () => {
     }
 
     if (game.settings.get(moduleName, "eidolonRunes")) {
-        const originPrepareDerivedData = CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData;
-        CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData = function () {
-            if (!game.ready) {
-                return originPrepareDerivedData.call(this);
-            }
-            const summoner = game.actors.get(this.getFlag(moduleName, 'summoner'));
-            if (!summoner) {
-                return originPrepareDerivedData.call(this);
-            } else if (summoner.getFlag(moduleName, 'eidolon')) {
-                summoner.prepareDerivedData()
-            }
+        libWrapper.register(moduleName, 'CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareDerivedData', function (wrapped) {
+            if (game.ready) {
+                try {
+                    const summoner = game.actors.get(this.getFlag(moduleName, 'summoner'));
+                    if (summoner) {
+                        const wornArmor = summoner.wornArmor;
+                        const isEquipped = wornArmor?.isEquipped && wornArmor?.isInvested !== false;
 
-            let acSlugs = ['bracers-of-armor']
-            let savingSlugs = ['bracers-of-armor', 'resilient']
+                        if (isEquipped) {
+                            const potency = wornArmor.system?.runes?.potency ?? 0;
+                            const resilient = Math.max(
+                                wornArmor.system?.traits?.config?.resilient ?? 0,
+                                wornArmor.system?.runes?.resilient ?? 0
+                            );
 
-            const mm = (this.synthetics.modifiers['ac'] ??= []);
+                            if (potency) {
+                                const mm = (this.synthetics.modifiers['ac'] ??= []);
+                                mm.push((options) => {
+                                    let modi = new game.pf2e.Modifier({
+                                        slug: wornArmor.slug,
+                                        label: wornArmor.name,
+                                        modifier: potency,
+                                        type: 'item',
+                                    })
+                                    if (options.test) modi.test(options.test);
+                                    return modi;
+                                });
+                            }
 
-            if (summoner.wornArmor?.system?.runes?.potency) {
-                mm.push((options) => {
-                    let modi = new game.pf2e.Modifier({
-                        slug: summoner.wornArmor.slug,
-                        label: summoner.wornArmor.name,
-                        modifier: summoner.wornArmor?.system?.runes?.potency,
-                        type: 'item',
-                    })
-                    if (options.test) modi.test(options.test);
-                    return modi;
-                });
-            }
-
-            let bracersArmorM = summoner.system.attributes.ac.modifiers.filter(m => acSlugs.includes(m.slug));
-            if (bracersArmorM.length) {
-
-                for (const m of bracersArmorM) {
-                    mm.push((options) => {
-                        let modi = new game.pf2e.Modifier({
-                            slug: m.slug,
-                            label: m.label,
-                            modifier: m.modifier,
-                            type: m.type,
-                        })
-                        if (options.test) modi.test(options.test);
-                        return modi;
-                    });
-                }
-            }
-
-            if (summoner?.saves?.fortitude?.modifiers) {
-                let savingMods = summoner.saves.fortitude.modifiers.filter(m => savingSlugs.includes(m.slug))
-                if (savingMods.length) {
-                    const mmm = (this.synthetics.modifiers['saving-throw'] ??= []);
-
-                    for (const m of savingMods) {
-                        mmm.push((options) => {
-                            let modi = new game.pf2e.Modifier({
-                                slug: m.slug,
-                                label: m.label,
-                                modifier: m.modifier,
-                                type: m.type,
-                            })
-                            if (options.test) modi.test(options.test);
-                            return modi;
-                        });
+                            if (resilient) {
+                                const mmm = (this.synthetics.modifiers['saving-throw'] ??= []);
+                                mmm.push((options) => {
+                                    let modi = new game.pf2e.Modifier({
+                                        slug: 'resilient',
+                                        label: wornArmor.name,
+                                        modifier: resilient,
+                                        type: 'item',
+                                    })
+                                    if (options.test) modi.test(options.test);
+                                    return modi;
+                                });
+                            }
+                        }
                     }
+                } catch (e) {
+                    console.warn(`${moduleName} | Failed to apply summoner runes to eidolon`, e);
                 }
             }
-
-            originPrepareDerivedData.call(this);
-        }
+            wrapped();
+        }, 'WRAPPER');
 
         libWrapper.register(moduleName, 'CONFIG.PF2E.Item.documentClasses.weapon.prototype.prepareBaseData', weaponData, 'WRAPPER')
     }
 
-    libWrapper.register(moduleName, 'CONFIG.Actor.documentClass.prototype.prepareData', actorPrepareData, 'WRAPPER')
+    libWrapper.register(moduleName, 'CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareData', actorPrepareData, 'WRAPPER')
     libWrapper.register(moduleName, "game.pf2e.Check.roll", checkCall, "WRAPPER");
 
     game.pf2eeidolonhelper = foundry.utils.mergeObject(game.pf2eeidolonhelper ?? {}, {
